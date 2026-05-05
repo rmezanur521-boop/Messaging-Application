@@ -1,0 +1,104 @@
+﻿@model MessagingApp.Models.ViewModels.ConversationViewModel
+@{
+    ViewData["Title"] = Model.FriendName;
+}
+
+<div class="chat-container">
+    <!-- Chat Header -->
+    <div class="chat-header">
+        <div class="chat-header-user">
+            <div class="chat-header-avatar">
+                @if (!string.IsNullOrEmpty(Model.FriendProfilePicture))
+                {
+                    <img src="~/uploads/profile-pictures/@Model.FriendProfilePicture" alt="@Model.FriendName" />
+                }
+                else
+                {
+                    <span>@Model.FriendName[0]</span>
+                }
+                <span class="online-dot" id="headerDot" style="display:none"></span>
+            </div>
+            <div>
+                <a asp-controller="Profile" asp-action="Index"
+                   asp-route-id="@Model.FriendId" class="chat-header-name">
+                    @Model.FriendName
+                </a>
+                @* <div class="chat-header-status" id="headerStatus">Offline</div> *@
+            </div>
+        </div>
+    </div>
+
+    <!-- Messages Area -->
+    <div class="messages-area" id="messagesArea">
+        @foreach (var msg in Model.Messages)
+        {
+            <div class="message-wrap @(msg.IsMine ? "mine" : "theirs")" id="msg_@msg.Id">
+                <div class="message-bubble @(msg.IsDeleted ? "deleted" : "")">
+                    <div class="message-text" id="msgText_@msg.Id">@msg.Content</div>
+                    
+                    @if (msg.IsMine && !msg.IsDeleted)
+                    {
+                        <div class="message-actions">
+                            <button class="msg-action-btn"
+                                    onclick="startEdit(@msg.Id, '@Html.Raw(msg.Content.Replace("'", "\\'"))')">
+                                <i class="fa fa-pencil" aria-hidden="true"></i>
+                            </button>
+                            <button class="msg-action-btn delete-btn"
+                                    onclick="deleteMessage(@msg.Id, '@Model.FriendId')">
+                                <i class="fa fa-trash" aria-hidden="true"></i>
+                            </button>
+                        </div>
+                    }
+                </div>
+
+                <!-- Message Meta Outside Bubble -->
+         
+                <div class="message-meta">
+                    <span class="message-time">@msg.SentAt.ToString("HH:mm")</span>
+                    @if (msg.EditedAt.HasValue && !msg.IsDeleted)
+                    {
+                        <span class="message-edited">edited</span>
+                    }
+                </div>
+            </div>
+        }
+    </div>
+
+    <!-- Typing Indicator -->
+    <div class="typing-indicator" id="typingIndicator" style="display:none">
+        <span>@Model.FriendName is typing</span>
+        <span class="typing-dots"><span></span><span></span><span></span></span>
+    </div>
+
+    <!-- Edit Bar -->
+    <div class="edit-bar" id="editBar" style="display:none">
+        <span>Editing message</span>
+        <button onclick="cancelEdit()">✕ Cancel</button>
+    </div>
+
+    <!-- Input Area -->
+    <div class="chat-input-area">
+        <div class="chat-input-wrap">
+            <textarea id="messageInput"
+                      class="chat-input"
+                      placeholder="Type a message..."
+                      rows="1"></textarea>
+            <button id="sendBtn" class="send-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="22" y1="2" x2="11" y2="13"></line>
+                    <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+                </svg>
+            </button>
+            
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        const currentUserId = "@Model.CurrentUserId";
+        const friendId = "@Model.FriendId";
+        const friendName = "@Model.FriendName";
+    </script>
+    <script src="~/js/chat.js"></script>
+}

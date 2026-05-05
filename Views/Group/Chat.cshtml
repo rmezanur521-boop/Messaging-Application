@@ -1,0 +1,164 @@
+﻿@model MessagingApp.Models.ViewModels.GroupChatViewModel
+@{
+    ViewData["Title"] = Model.GroupName;
+}
+
+<div class="chat-container">
+    <!-- Chat Header -->
+    <div class="chat-header">
+        <div class="chat-header-user">
+            <div class="chat-header-avatar group-avatar-header">
+                
+                @if (!string.IsNullOrWhiteSpace(Model.GroupName))
+                    {
+                    var parts = Model.GroupName.Trim().Split(' ', StringSplitOptions.RemoveEmptyEntries);
+                    string initials = parts[0][0].ToString().ToUpper();
+        
+                    if (parts.Length > 1)
+                        initials += parts[1][0].ToString().ToUpper();
+                        <span>@initials</span>
+                    }
+            </div>
+            <div>
+                <div class="chat-header-name">@Model.GroupName</div>
+                <div class="chat-header-status">
+                    @Model.Members.Count member@(Model.Members.Count != 1 ? "s" : "")
+                </div>
+            </div>
+        </div>
+        <div class="chat-header-actions">
+            @if (Model.IsAdmin)
+            {
+                <a asp-action="Manage" asp-route-groupId="@Model.GroupId"
+                   class="btn-manage"><i class="fa fa-cog" aria-hidden="true"></i> Manage</a>
+            }
+            <button class="btn-members-toggle" id="membersToggle" title="Members"><i class="fa fa-users" aria-hidden="true"></i> </button>
+        </div>
+    </div>
+
+    <div class="chat-body-wrap">
+        <!-- Messages Area -->
+        <div class="chat-main">
+            <div class="messages-area" id="messagesArea">
+                @foreach (var msg in Model.Messages)
+                {
+                    <div class="message-wrap @(msg.IsMine ? "mine" : "theirs")"
+                         id="msg_@msg.Id">
+
+                        @if (!msg.IsMine)
+                        {
+                            <div class="message-sender-name">@msg.SenderName</div>
+                        }
+
+                        <div class="message-bubble @(msg.IsDeleted ? "deleted" : "")">
+
+                            <div class="message-text" id="msgText_@msg.Id">
+                                @msg.Content
+                            </div>
+
+                            @if (msg.IsMine && !msg.IsDeleted)
+                            {
+                                <div class="message-actions">
+                                    <button class="msg-action-btn"
+                                            onclick="startEdit(@msg.Id, '@Html.Raw(msg.Content.Replace("'", "\\'"))')">
+                                        <i class="fa fa-pencil" aria-hidden="true"></i>
+                                    </button>
+
+                                    <button class="msg-action-btn delete-btn"
+                                            onclick="deleteGroupMessage(@msg.Id)">
+                                        <i class="fa fa-trash" aria-hidden="true"></i>
+                                    </button>
+                                </div>
+                            }
+                        </div>
+
+                        <!-- Message Meta Outside Bubble -->
+                        <div class="message-meta">
+                            <span class="message-time">
+                                @msg.SentAt.ToString("HH:mm")
+                            </span>
+
+                            @if (msg.EditedAt.HasValue && !msg.IsDeleted)
+                            {
+                                <span class="message-edited">edited</span>
+                            }
+                        </div>
+
+                    </div>
+                }
+            </div>
+
+            <!-- Typing Indicator -->
+            <div class="typing-indicator" id="typingIndicator" style="display:none">
+                <span id="typingText">Someone is typing</span>
+                <span class="typing-dots">
+                    <span></span><span></span><span></span>
+                </span>
+            </div>
+
+            <!-- Edit Bar -->
+            <div class="edit-bar" id="editBar" style="display:none">
+                <span>✏️ Editing message</span>
+                <button onclick="cancelEdit()">✕ Cancel</button>
+            </div>
+
+            <!-- Input Area -->
+            <div class="chat-input-area">
+                <div class="chat-input-wrap">
+                    <textarea id="messageInput"
+                              class="chat-input"
+                              placeholder="Type a message..."
+                              rows="1"></textarea>
+                    <button id="sendBtn" class="send-btn">
+                        <svg viewBox="0 0 24 24" fill="none"
+                             stroke="currentColor" stroke-width="2">
+                            <line x1="22" y1="2" x2="11" y2="13"></line>
+                            <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Members Panel -->
+        <div class="members-panel" id="membersPanel">
+            <div class="members-panel-header">
+                <h4>Members</h4>
+                <button class="btn-close-panel" id="closeMembersPanel">✕</button>
+            </div>
+            <div class="members-list">
+                @foreach (var member in Model.Members)
+                {
+                    <div class="member-item">
+                        <div class="member-avatar">
+                            @if (!string.IsNullOrEmpty(member.ProfilePicture))
+                            {
+                                <img src="~/uploads/profile-pictures/@member.ProfilePicture"
+                                     alt="@member.FullName" />
+                            }
+                            else
+                            {
+                                <span>@member.FullName[0]</span>
+                            }
+                        </div>
+                        <div class="member-info">
+                            <span class="member-name">@member.FullName</span>
+                            @if (member.Role == "Admin")
+                            {
+                                <span class="member-role-badge">Admin</span>
+                            }
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        const currentUserId = "@Model.CurrentUserId";
+        const groupId = @Model.GroupId;
+    </script>
+    <script src="~/js/groupChat.js"></script>
+}

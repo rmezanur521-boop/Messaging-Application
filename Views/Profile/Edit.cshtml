@@ -1,0 +1,87 @@
+﻿@model MessagingApp.Models.ViewModels.EditProfileViewModel
+@{
+    ViewData["Title"] = "Edit Profile";
+}
+
+<div class="edit-profile-page">
+    <div class="edit-card">
+        <h2 class="edit-title">Edit Profile</h2>
+
+        <form asp-action="Edit" method="post" enctype="multipart/form-data">
+            <div asp-validation-summary="ModelOnly" class="alert-error"></div>
+
+            <div class="avatar-upload-section">
+                <div class="avatar-preview" id="avatarPreview">
+                    @if (!string.IsNullOrEmpty(Model.ExistingProfilePicture))
+                    {
+                        <img src="~/uploads/profile-pictures/@Model.ExistingProfilePicture" id="avatarImg" alt="Profile" />
+                    }
+                    else
+                    {
+                        <div class="avatar-placeholder" id="avatarPlaceholder">📷</div>
+                    }
+                </div>
+                <label class="btn-upload" for="ProfilePictureFile">
+                    Change Photo
+                </label>
+                <input type="file" id="ProfilePictureFile" name="ProfilePictureFile"
+                       accept="image/*" style="display:none" onchange="previewImage(this)" />
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label asp-for="FirstName">First Name</label>
+                    <input asp-for="FirstName" class="form-input" />
+                    <span asp-validation-for="FirstName" class="field-error"></span>
+                </div>
+                <div class="form-group">
+                    <label asp-for="LastName">Last Name</label>
+                    <input asp-for="LastName" class="form-input" />
+                    <span asp-validation-for="LastName" class="field-error"></span>
+                </div>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label asp-for="DateOfBirth">Date of Birth</label>
+                    <input asp-for="DateOfBirth" type="date" class="form-input" />
+                </div>
+                <div class="form-group">
+                    <label asp-for="Gender">Gender</label>
+                    <select asp-for="Gender" class="form-input">
+                        <option value="">Prefer not to say</option>
+                        <option value="Male">Male</option>
+                        <option value="Female">Female</option>
+                        <option value="Other">Other</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label asp-for="Bio">Bio</label>
+                <textarea asp-for="Bio" class="form-input form-textarea"
+                          placeholder="Tell something about yourself..." rows="3"></textarea>
+            </div>
+
+            <div class="edit-actions">
+                <button type="submit" class="btn-save">Save Changes</button>
+                <a asp-action="Index" class="btn-cancel">Cancel</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        function previewImage(input) {
+            if (input.files && input.files[0]) {
+                const reader = new FileReader();
+                reader.onload = function (e) {
+                    const preview = document.getElementById('avatarPreview');
+                    preview.innerHTML = `<img src="${e.target.result}" id="avatarImg" alt="Profile" />`;
+                };
+                reader.readAsDataURL(input.files[0]);
+            }
+        }
+    </script>
+}

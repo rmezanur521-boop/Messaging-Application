@@ -1,0 +1,88 @@
+﻿@model MessagingApp.Models.ViewModels.ProfileViewModel
+@{
+    ViewData["Title"] = $"{Model.FirstName} {Model.LastName}";
+    var isOwnProfile = Model.Id == ViewContext.HttpContext.User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+}
+
+<div class="profile-page">
+    <div class="profile-card">
+        <div class="profile-cover"></div>
+        <div class="profile-body">
+            <div class="profile-avatar-wrap">
+                @if (!string.IsNullOrEmpty(Model.ProfilePicture))
+                {
+                    <img src="~/uploads/profile-pictures/@Model.ProfilePicture" class="profile-avatar" alt="Avatar" />
+                }
+                else
+                {
+                    <div class="profile-avatar-placeholder">
+                        @Model.FirstName[0]@Model.LastName[0]
+                    </div>
+                }
+            </div>
+
+            <div class="profile-info">
+                <h1 class="profile-name">@Model.FirstName @Model.LastName</h1>
+                <p class="profile-email">@Model.Email</p>
+
+                @if (!string.IsNullOrEmpty(Model.Bio))
+                {
+                    <p class="profile-bio">@Model.Bio</p>
+                }
+
+                <div class="profile-meta">
+                    @if (Model.DateOfBirth.HasValue)
+                    {
+                        <span class="meta-item"><i class="fa fa-birthday-cake" aria-hidden="true"></i> @Model.DateOfBirth.Value.ToString("MMMM dd, yyyy")</span>
+                    }
+                    @if (!string.IsNullOrEmpty(Model.Gender))
+                    {
+                        <span class="meta-item"><i class="fa fa-user" aria-hidden="true"></i> @Model.Gender</span>
+                    }
+                    <span class="meta-item"><i class="fa fa-calendar" aria-hidden="true"></i> Joined @Model.CreatedAt.ToString("MMMM yyyy")</span>
+                </div>
+
+                <div class="profile-actions">
+                    @if (isOwnProfile)
+                    {
+                        <a asp-action="Edit" class="btn-edit">Edit Profile</a>
+                    }
+                    else if (Model.IsFriend)
+                    {
+                        <a asp-controller="Chat" asp-action="Conversation" asp-route-friendId="@Model.Id" class="btn-message">
+                            <i class="fa fa-commenting" aria-hidden="true"></i> Send Message
+                        </a>
+                        <span class="badge-friend"><i class="fa fa-check" aria-hidden="true"></i> Friends</span>
+                    }
+                    else if (Model.HasPendingRequest && !Model.RequestSentByMe)
+                    {
+                        <form asp-controller="Friend" asp-action="Accept" method="post" style="display:inline">
+                            <input type="hidden" name="requestId" value="@Model.FriendRequestId" />
+                            <button type="submit" class="btn-accept">Accept Request</button>
+                        </form>
+                        <form asp-controller="Friend" asp-action="Reject" method="post" style="display:inline">
+                            <input type="hidden" name="requestId" value="@Model.FriendRequestId" />
+                            <button type="submit" class="btn-reject">Reject</button>
+                        </form>
+                    }
+                    else if (Model.RequestSentByMe)
+                    {
+                        <span class="badge-pending">Request Sent</span>
+                    }
+                    else
+                    {
+                        <form asp-controller="Friend" asp-action="SendRequest" method="post">
+                            <input type="hidden" name="receiverId" value="@Model.Id" />
+                            <button type="submit" class="btn-add-friend"><i class="fa fa-plus" aria-hidden="true"></i> Add Friend</button>
+                        </form>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@if (TempData["Success"] != null)
+{
+    <div class="toast-success">@TempData["Success"]</div>
+}

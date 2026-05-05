@@ -1,0 +1,102 @@
+﻿@model MessagingApp.Models.ViewModels.ManageGroupViewModel
+@{
+    ViewData["Title"] = $"Manage: {Model.GroupName}";
+}
+
+<div class="manage-group-page">
+    <div class="section-card">
+        <div class="section-header">
+            <h2 class="edit-title" style="margin-bottom:0">@Model.GroupName</h2>
+            <a asp-action="Chat" asp-route-groupId="@Model.GroupId"
+               class="btn-back">← Back to Chat</a>
+        </div>
+    </div>
+
+    <!-- Current Members -->
+    <div class="section-card">
+        <h3 class="section-title">
+            Current Members
+            <span class="badge">@Model.Members.Count</span>
+        </h3>
+        <div class="manage-member-list">
+            @foreach (var member in Model.Members)
+            {
+                <div class="manage-member-item">
+                    <div class="user-avatar-sm">
+                        @if (!string.IsNullOrEmpty(member.ProfilePicture))
+                        {
+                            <img src="~/uploads/profile-pictures/@member.ProfilePicture"
+                                 alt="@member.FullName" />
+                        }
+                        else
+                        {
+                            <span>@member.FullName[0]</span>
+                        }
+                    </div>
+                    <div class="user-info" style="flex:1">
+                        <strong>@member.FullName</strong>
+                        <small>@member.Role</small>
+                    </div>
+                    @if (member.Role != "Admin")
+                    {
+                        <form asp-action="RemoveMember" method="post">
+                            <input type="hidden" name="groupId" value="@Model.GroupId" />
+                            <input type="hidden" name="userId" value="@member.UserId" />
+                            <button type="submit" class="btn-sm-reject"
+                                    onclick="return confirm('Remove this member?')">
+                                Remove
+                            </button>
+                        </form>
+                    }
+                    else
+                    {
+                        <span class="badge-friend" style="font-size:12px">Admin</span>
+                    }
+                </div>
+            }
+        </div>
+    </div>
+
+    <!-- Add Members -->
+    @if (Model.FriendsNotInGroup.Any())
+    {
+        <div class="section-card">
+            <h3 class="section-title">Add Members</h3>
+            <div class="manage-member-list">
+                @foreach (var friend in Model.FriendsNotInGroup)
+                {
+                    <div class="manage-member-item">
+                        <div class="user-avatar-sm">
+                            @if (!string.IsNullOrEmpty(friend.ProfilePicture))
+                            {
+                                <img src="~/uploads/profile-pictures/@friend.ProfilePicture"
+                                     alt="@friend.FullName" />
+                            }
+                            else
+                            {
+                                <span>@friend.FullName[0]</span>
+                            }
+                        </div>
+                        <div class="user-info" style="flex:1">
+                            <strong>@friend.FullName</strong>
+                        </div>
+                        <form asp-action="AddMember" method="post">
+                            <input type="hidden" name="groupId" value="@Model.GroupId" />
+                            <input type="hidden" name="userId" value="@friend.Id" />
+                            <button type="submit" class="btn-sm-accept">+ Add</button>
+                        </form>
+                    </div>
+                }
+            </div>
+        </div>
+    }
+    else
+    {
+        <div class="section-card">
+            <div class="empty-state">
+                <span>✅</span>
+                <p>All your friends are already in this group.</p>
+            </div>
+        </div>
+    }
+</div>

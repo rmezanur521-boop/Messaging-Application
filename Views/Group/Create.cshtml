@@ -1,0 +1,89 @@
+﻿@model MessagingApp.Models.ViewModels.CreateGroupViewModel
+@{
+    ViewData["Title"] = "Create Group";
+}
+
+<div class="create-group-page">
+    <div class="section-card">
+        <h2 class="edit-title">Create New Group</h2>
+
+        <form asp-action="Create" method="post">
+            <div asp-validation-summary="ModelOnly" class="alert-error"></div>
+
+            <div class="form-group">
+                <label for="Name">Group Name</label>
+                <input type="text" id="Name" name="Name" class="form-input"
+                       placeholder="Enter group name..." value="@Model.Name" />
+            </div>
+
+            <div class="form-group">
+                <label>Select Friends to Add</label>
+                @if (!Model.Friends.Any())
+                {
+                    <div class="empty-state">
+                        <span><i class="fa-solid fa-users"></i></span>
+                        <p>
+                            You need friends to create a group.
+                            <a asp-controller="Friend" asp-action="Search"> <i class="fa-solid fa-magnifying-glass"></i> Search friends</a>
+                        </p>
+                    </div>
+                }
+                else
+                {
+                    <div class="friend-select-list">
+                        @foreach (var friend in Model.Friends)
+                        {
+                            <label class="friend-select-item">
+                                <input type="checkbox"
+                                       name="SelectedFriendIds"
+                                       value="@friend.Id"
+                                       class="friend-checkbox" />
+                                <div class="friend-select-avatar">
+                                    @if (!string.IsNullOrEmpty(friend.ProfilePicture))
+                                    {
+                                        <img src="~/uploads/profile-pictures/@friend.ProfilePicture"
+                                             alt="@friend.FullName" />
+                                    }
+                                    else
+                                    {
+                                        <span>@friend.FullName[0]</span>
+                                    }
+                                </div>
+                                <span class="friend-select-name">@friend.FullName</span>
+                                <span class="checkmark">✓</span>
+                            </label>
+                        }
+                    </div>
+                }
+            </div>
+
+            <div class="selected-count" id="selectedCount">0 friends selected</div>
+
+            <div class="edit-actions">
+                <button type="submit" class="btn-save"><i class="fa-solid fa-plus"></i> Create Group</button>
+                <a asp-controller="Chat" asp-action="Index" class="btn-cancel">Cancel</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        const checkboxes = document.querySelectorAll('.friend-checkbox');
+        const countEl = document.getElementById('selectedCount');
+
+        function updateCount() {
+            const count = document.querySelectorAll('.friend-checkbox:checked').length;
+            countEl.textContent = count === 0
+                ? '0 friends selected'
+                : `${count} friend${count > 1 ? 's' : ''} selected`;
+        }
+
+        checkboxes.forEach(cb => {
+            cb.addEventListener('change', function () {
+                this.closest('.friend-select-item').classList.toggle('selected', this.checked);
+                updateCount();
+            });
+        });
+    </script>
+}

@@ -1,0 +1,81 @@
+﻿@model MessagingApp.Models.ViewModels.ChatViewModel
+@{
+    ViewData["Title"] = "Chats";
+}
+
+<div class="chat-index">
+    @* <div class="chat-welcome">
+        <div class="welcome-icon"><i class="fa fa-comments" aria-hidden="true"></i></div>
+        <h2>Your Conversations</h2>
+        <p>Select a friend or group to start chatting</p>
+    </div> *@
+
+    @if (Model.Conversations.Any())
+    {
+        <div class="preview-list">
+            <h3 class="list-heading">Direct Messages</h3>
+            @foreach (var conv in Model.Conversations)
+            {
+                <a asp-action="Conversation" asp-route-friendId="@conv.FriendId" class="preview-item">
+                    <div class="preview-avatar">
+                        @if (!string.IsNullOrEmpty(conv.FriendProfilePicture))
+                        {
+                            <img src="~/uploads/profile-pictures/@conv.FriendProfilePicture" alt="@conv.FriendName" />
+                        }
+                        else
+                        {
+                            <span>@conv.FriendName[0]</span>
+                        }
+                    </div>
+                    <div class="preview-info">
+                        <div class="preview-name">@conv.FriendName</div>
+                        <div class="preview-last">@conv.LastMessage</div>
+                    </div>
+                    @if (conv.LastMessageTime.HasValue)
+                    {
+                        <div class="preview-time">
+                            @conv.LastMessageTime.Value.ToString("MMM dd")
+                        </div>
+                    }
+                </a>
+            }
+        </div>
+    }
+
+    @if (Model.Groups.Any())
+    {
+        <div class="preview-list">
+            <h3 class="list-heading">Groups</h3>
+            @foreach (var group in Model.Groups)
+            {
+                <a asp-controller="Group" asp-action="Chat" asp-route-groupId="@group.GroupId" class="preview-item">
+                    <div class="preview-avatar group-avatar-preview">
+                        @if (!string.IsNullOrWhiteSpace(group.GroupName))
+                        {
+                            var parts = group.GroupName.Trim().Split(' ', StringSplitOptions.RemoveEmptyEntries);
+                            string initials = parts[0][0].ToString().ToUpper();
+
+                            if (parts.Length > 1)
+                                initials += parts[1][0].ToString().ToUpper();
+                            <span>@initials</span>
+                        }
+                    </div>
+                    <div class="preview-info">
+                        <div class="preview-name">@group.GroupName</div>
+                        <div class="preview-last">@(group.LastMessage ?? "No messages yet")</div>
+                    </div>
+                    <div class="preview-time">@group.MemberCount members</div>
+                </a>
+            }
+        </div>
+    }
+
+    @if (!Model.Conversations.Any() && !Model.Groups.Any())
+    {
+        <div class="empty-chat-state">
+            <span><i class="fa fa-star" aria-hidden="true"></i></span>
+            <p>No conversations yet.</p>
+            <a asp-controller="Friend" asp-action="Search" class="btn-start"><i class="fa-solid fa-magnifying-glass"></i> Find Friends</a>
+        </div>
+    }
+</div>

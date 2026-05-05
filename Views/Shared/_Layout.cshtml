@@ -1,0 +1,189 @@
+﻿@using Microsoft.AspNetCore.Identity
+@using MessagingApp.Models.Domain
+@using MessagingApp.Models.ViewModels
+@inject UserManager<AppUser> UserManager
+@inject MessagingApp.Services.Interfaces.IFriendService FriendService
+@inject MessagingApp.Services.Interfaces.IChatService ChatService
+@inject MessagingApp.Services.Interfaces.IGroupService GroupService
+@{
+    var currentUser = await UserManager.GetUserAsync(User);
+    var friends = currentUser != null ? await FriendService.GetFriendsAsync(currentUser.Id) : new();
+    var groups = currentUser != null ? await GroupService.GetGroupPreviewsAsync(currentUser.Id) : new();
+    var pendingRequests = currentUser != null ? await FriendService.GetPendingRequestsAsync(currentUser.Id) : new();
+}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - MessagingApp</title>
+    <link rel="stylesheet" href="~/css/site.css" />
+    <link rel="stylesheet" href="~/css/chat.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.1/css/all.min.css" integrity="sha512-2SwdPD6INVrV/lHTZbO2nodKhrnDdJK9/kg2XD1r9uGqPo1cUbujc+IYdlYdEErWNu69gVcYgdxlmVmzTWnetw==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    @await RenderSectionAsync("Styles", required: false)
+</head>
+<body>
+
+    <div class="app-shell">
+
+        <!-- Sidebar -->
+        <aside class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <div class="sidebar-logo">
+                    <i class="fa fa-comments" aria-hidden="true"></i>
+                    <span class="logo-text">MessagingApp</span>
+                </div>
+                <button class="sidebar-close" id="sidebarClose">✕</button>
+            </div>
+
+            <!-- Current User -->
+            @if (currentUser != null)
+            {
+                <div class="sidebar-user">
+                    <a asp-controller="Profile" asp-action="Index" class="sidebar-user-link">
+                        <div class="sidebar-avatar">
+                            @if (!string.IsNullOrEmpty(currentUser.ProfilePicture))
+                            {
+                                <img src="~/uploads/profile-pictures/@currentUser.ProfilePicture" alt="You" />
+                            }
+                            else
+                            {
+                                <span>@currentUser.FirstName[0]@currentUser.LastName[0]</span>
+                            }
+                        </div>
+                        <div class="sidebar-user-info">
+                            <strong>@currentUser.FirstName @currentUser.LastName</strong>
+                            <small>View Profile</small>
+                        </div>
+                    </a>
+                </div>
+            }
+
+            <!-- Nav Links -->
+            <nav class="sidebar-nav">
+                <a asp-controller="Chat" asp-action="Index" class="nav-item">
+                    <span class="nav-icon"><i class="fa fa-commenting" aria-hidden="true"></i></span> Chats
+                </a>
+                <a asp-controller="Friend" asp-action="Index" class="nav-item">
+                    <span class="nav-icon"> <i class="fa fa-users" aria-hidden="true"></i></span> Friends
+                    @if (pendingRequests.Count > 0)
+                    {
+                        <span class="nav-badge">@pendingRequests.Count</span>
+                    }
+                </a>
+                <a asp-controller="Friend" asp-action="Search" class="nav-item">
+                    <span class="nav-icon"><i class="fa fa-search" aria-hidden="true"></i></span> Find People
+                </a>
+                <a asp-controller="Group" asp-action="Create" class="nav-item">
+                    <span class="nav-icon"><i class="fa fa-plus" aria-hidden="true"></i></span> New Group
+                </a>
+            </nav>
+
+            <!-- Friends List -->
+            @if (friends.Any())
+            {
+                <div class="sidebar-section">
+                    <div class="sidebar-section-title">Friends</div>
+                    @foreach (var friend in friends.Take(10))
+                    {
+                        <a asp-controller="Chat" asp-action="Conversation"
+                           asp-route-friendId="@friend.Id" class="sidebar-chat-item"
+                           data-friend-id="@friend.Id">
+                            <div class="sidebar-item-avatar">
+                                @if (!string.IsNullOrEmpty(friend.ProfilePicture))
+                                {
+                                    <img src="~/uploads/profile-pictures/@friend.ProfilePicture" alt="@friend.FullName" />
+                                }
+                                else
+                                {
+                                    <span>@friend.FullName[0]</span>
+                                }
+                                <span class="online-dot" id="dot_@friend.Id" style="display:none"></span>
+                            </div>
+                            <div class="sidebar-item-info">
+                                <span class="sidebar-item-name">@friend.FullName</span>
+                            </div>
+                        </a>
+                    }
+                </div>
+            }
+
+            <!-- Groups List -->
+            @if (groups.Any())
+            {
+                <div class="sidebar-section">
+                    <div class="sidebar-section-title">Groups</div>
+                    @foreach (var group in groups.Take(10))
+                    {
+                        <a asp-controller="Group" asp-action="Chat"
+                           asp-route-groupId="@group.GroupId" class="sidebar-chat-item">
+                            <div class="sidebar-item-avatar group-avatar">
+                                @if (!string.IsNullOrWhiteSpace(group.GroupName))
+                                {
+                                    var parts = group.GroupName.Trim().Split(' ', StringSplitOptions.RemoveEmptyEntries);
+                                    string initials = parts[0][0].ToString().ToUpper();
+
+                                    if (parts.Length > 1)
+                                        initials += parts[1][0].ToString().ToUpper();
+                                    <span>@initials</span>
+                                }
+                            </div>
+                            <div class="sidebar-item-info">
+                                <span class="sidebar-item-name">@group.GroupName</span>
+                                <small class="sidebar-item-sub">@group.MemberCount members</small>
+                            </div>
+                        </a>
+                    }
+                </div>
+            }
+
+            <!-- Logout -->
+            <div class="sidebar-footer">
+                <form asp-controller="Account" asp-action="Logout" method="post">
+                    <button type="submit" class="btn-logout">
+                        <span><i class="fa fa-sign-out" aria-hidden="true"></i></span> Sign Out
+                    </button>
+                </form>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <div class="main-area">
+            <header class="top-bar">
+                <button class="menu-toggle" id="menuToggle">☰</button>
+                <div class="top-bar-title">@ViewData["Title"]</div>
+                <div class="top-bar-actions">
+                    @if (pendingRequests.Count > 0)
+                    {
+                        <a asp-controller="Friend" asp-action="Index" class="notif-bell">
+                            <i class="fa fa-bell-o" aria-hidden="true"></i> <span class="notif-count">@pendingRequests.Count</span>
+                        </a>
+                    }
+                </div>
+            </header>
+
+            <main class="page-content">
+                @RenderBody()
+            </main>
+        </div>
+
+    </div>
+
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/8.0.0/signalr.min.js"></script>
+    <script src="~/js/friends.js"></script>
+
+    <script>
+        // Mobile sidebar toggle
+        document.getElementById('menuToggle').addEventListener('click', () => {
+            document.getElementById('sidebar').classList.toggle('open');
+        });
+        document.getElementById('sidebarClose').addEventListener('click', () => {
+            document.getElementById('sidebar').classList.remove('open');
+        });
+    </script>
+
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

@@ -1,0 +1,115 @@
+﻿@model MessagingApp.Models.ViewModels.FriendIndexViewModel
+@{
+    ViewData["Title"] = "Friends";
+}
+
+<div class="friends-page">
+    @if (TempData["Success"] != null)
+    {
+        <div class="toast-success">@TempData["Success"]</div>
+    }
+
+    @if (Model.PendingRequests.Any())
+    {
+        <div class="section-card">
+            <h3 class="section-title">
+                Friend Requests
+                <span class="badge">@Model.PendingRequests.Count</span>
+            </h3>
+            <div class="request-list">
+                @foreach (var req in Model.PendingRequests)
+                {
+                    <div class="request-item">
+                        <a asp-controller="Profile" asp-action="Index" asp-route-id="@req.SenderId" class="user-link">
+                            <div class="user-avatar-sm">
+                                @if (!string.IsNullOrEmpty(req.SenderProfilePicture))
+                                {
+                                    <img src="~/uploads/profile-pictures/@req.SenderProfilePicture" alt="Avatar" />
+                                }
+                                else
+                                {
+                                    <span>@req.SenderName[0]</span>
+                                }
+                            </div>
+                            <div class="user-info">
+                                <strong>@req.SenderName</strong>
+                                <small>@req.SentAt.ToString("MMM dd")</small>
+                            </div>
+                        </a>
+                        <div class="request-actions">
+                            <form asp-action="Accept" method="post" style="display:inline">
+                                <input type="hidden" name="requestId" value="@req.Id" />
+                                <button type="submit" class="btn-sm-accept">Accept</button>
+                            </form>
+                            <form asp-action="Reject" method="post" style="display:inline">
+                                <input type="hidden" name="requestId" value="@req.Id" />
+                                <button type="submit" class="btn-sm-reject">Reject</button>
+                            </form>
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+    }
+
+    <div class="section-card">
+        <div class="section-header">
+            <h3 class="section-title">
+                My Friends
+                <span class="badge">@Model.Friends.Count</span>
+            </h3>
+            <a asp-action="Search" class="btn-find"><i class="fa-solid fa-magnifying-glass"></i> Search Friends</a>
+        </div>
+
+        @if (!Model.Friends.Any())
+        {
+            <div class="empty-state">
+                <span><i class="fa-solid fa-users"></i></span>
+                <p>No friends yet. <a asp-action="Search">Search for people</a> to connect with.</p>
+            </div>
+        }
+        else
+        {
+            <div class="friends-grid">
+                @foreach (var friend in Model.Friends)
+                {
+                    <div class="friend-card">
+                        <a asp-controller="Profile" asp-action="Index" asp-route-id="@friend.Id">
+                            <div class="friend-avatar">
+                                @if (!string.IsNullOrEmpty(friend.ProfilePicture))
+                                {
+                                    <img src="~/uploads/profile-pictures/@friend.ProfilePicture" alt="Avatar" />
+                                }
+                                else
+                                {
+                                    <span>@friend.FullName[0]</span>
+                                }
+                            </div>
+                            <div class="friend-name">@friend.FullName</div>
+                            @if (!string.IsNullOrEmpty(friend.Bio))
+                            {
+                                <div class="friend-bio">@friend.Bio</div>
+                            }
+                        </a>
+
+
+                        <div class="friend-actions">
+                            <a asp-controller="Chat" asp-action="Conversation"
+                               asp-route-friendId="@friend.Id" class="btn-chat-sm" style="color:white">
+                                <i class="fa-brands fa-rocketchat"></i> Message
+                            </a>
+
+                            <form asp-controller="Friend" asp-action="RemoveFriend" method="post">
+                                <input type="hidden" name="friendId" value="@friend.Id" />
+                                <button type="submit" class="btn-chat-sm" style="border:none; background:#ee5253; "
+                                        onclick="return confirm('Are you sure to remove this friend?')">
+                                    <i class="fa fa-user-times" aria-hidden="true"></i> Delete
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                }
+            </div>
+        }
+    </div>
+</div>

@@ -1,0 +1,156 @@
+﻿@model MessagingApp.Models.ViewModels.FriendIndexViewModel
+@{
+    ViewData["Title"] = "Find Friends";
+}
+
+<div class="friends-page">
+    <div class="section-card">
+        <h3 class="section-title">Find Friends</h3>
+
+        <form asp-action="Search" method="get" class="search-form">
+            <div class="search-bar">
+                <input type="text"
+                       name="query"
+                       value="@Model.SearchQuery"
+                       placeholder="Search by name or email..."
+                       class="search-input" />
+
+                <button type="submit" class="btn-search">
+                    <i class="fa-solid fa-magnifying-glass"></i> Search
+                </button>
+            </div>
+        </form>
+
+        @* Show suggested friends before search *@
+        @if (string.IsNullOrEmpty(Model.SearchQuery))
+        {
+            <div class="suggested-users">
+                <h5 class="mb-3">Suggested Friends</h5>
+
+                @if (Model.SearchResults.Any())
+                {
+                    @foreach (var user in Model.SearchResults.Take(40))
+                    {
+                        <div class="search-result-item">
+                            <a asp-controller="Profile"
+                               asp-action="Index"
+                               asp-route-id="@user.Id"
+                               class="user-link">
+
+                                <div class="user-avatar-sm">
+                                    @if (!string.IsNullOrEmpty(user.ProfilePicture))
+                                    {
+                                        <img src="~/uploads/profile-pictures/@user.ProfilePicture" alt="Avatar" />
+                                    }
+                                    else
+                                    {
+                                        <span>@user.FullName[0]</span>
+                                    }
+                                </div>
+
+                                <div class="user-info">
+                                    <strong>@user.FullName</strong>
+
+                                    @if (!string.IsNullOrEmpty(user.Bio))
+                                    {
+                                        <small>@user.Bio</small>
+                                    }
+                                </div>
+                            </a>
+
+                            <form asp-action="SendRequest" method="post">
+                                <input type="hidden" name="receiverId" value="@user.Id" />
+                                @if (user.IsFriend)
+                                {
+                                    <button class="btn-sm-add" disabled>
+                                        Friend
+                                    </button>
+                                }
+                                else if (user.IsRequestSent)
+                                {
+                                    <button class="btn-sm-add" disabled>
+                                        Requested
+                                    </button>
+                                }
+                                else
+                                {
+                                    <form asp-action="SendRequest" method="post">
+                                        <input type="hidden" name="receiverId" value="@user.Id" />
+
+                                        <button type="submit" class="btn-sm-add">
+                                            + Add
+                                        </button>
+                                    </form>
+                                }
+                            </form>
+                        </div>
+                    }
+                }
+                else
+                {
+                    <div class="empty-state">
+                        <p>No suggested friends available.</p>
+                    </div>
+                }
+            </div>
+        }
+
+        @* Search Result *@
+        else if (Model.SearchResults.Any())
+        {
+            <div class="search-results">
+                @foreach (var user in Model.SearchResults)
+                {
+                    <div class="search-result-item">
+                        <a asp-controller="Profile"
+                           asp-action="Index"
+                           asp-route-id="@user.Id"
+                           class="user-link">
+
+                            <div class="user-avatar-sm">
+                                @if (!string.IsNullOrEmpty(user.ProfilePicture))
+                                {
+                                    <img src="~/uploads/profile-pictures/@user.ProfilePicture" alt="Avatar" />
+                                }
+                                else
+                                {
+                                    <span>@user.FullName[0]</span>
+                                }
+                            </div>
+
+                            <div class="user-info">
+                                <strong>@user.FullName</strong>
+
+                                @if (!string.IsNullOrEmpty(user.Bio))
+                                {
+                                    <small>@user.Bio</small>
+                                }
+                            </div>
+                        </a>
+
+                        <form asp-action="SendRequest" method="post">
+                            <input type="hidden" name="receiverId" value="@user.Id" />
+                            <button type="submit" class="btn-sm-add">
+                                + Add
+                            </button>
+                        </form>
+                    </div>
+                }
+            </div>
+        }
+        else
+        {
+            <div class="empty-state">
+                <span>
+                    <i class="fa fa-search" aria-hidden="true"></i>
+                </span>
+
+                <p>No users found for "@Model.SearchQuery"</p>
+            </div>
+        }
+    </div>
+</div>
+
+
+
+
