@@ -1,11 +1,13 @@
-using MessagingApp.Data;
+﻿using MessagingApp.Data;
 using MessagingApp.Hubs;
 using MessagingApp.Models.Domain;
 using MessagingApp.Services;
 using MessagingApp.Services.Interfaces;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
-
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.IdentityModel.Tokens;
+using System.Text;
 var builder = WebApplication.CreateBuilder(args);
 
 // Database
@@ -43,7 +45,35 @@ builder.Services.AddScoped<IFileService, FileService>();
 // MVC + SignalR
 builder.Services.AddControllersWithViews();
 builder.Services.AddSignalR();
+// JWT Authentication
+var jwtKey = builder.Configuration["Jwt:Key"];
+builder.Services.AddAuthentication(options =>
+{
+    // Default scheme দুটো আলাদা করো:
+    // MVC → Cookie, API → JWT
+    options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+    options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+})
+.AddJwtBearer(options =>
+{
+    options.TokenValidationParameters = new TokenValidationParameters
+    {
+        ValidateIssuer = true,
+        ValidateAudience = true,
+        ValidateLifetime = true,
+        ValidateIssuerSigningKey = true,
+        ValidIssuer = builder.Configuration["Jwt:Issuer"],
+        ValidAudience = builder.Configuration["Jwt:Audience"],
+        IssuerSigningKey = new SymmetricSecurityKey(
+            Encoding.UTF8.GetBytes(jwtKey!))
+    };
+})
+.AddCookie();
+builder.Services.AddScoped<JwtService>();
 
+// Swagger (Flutter dev-এ test করতে সুবিধা হবে)
+builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddSwaggerGen();
 var app = builder.Build();
 // Auto-create uploads directory
 var uploadsPath = Path.Combine(builder.Environment.WebRootPath, "uploads", "profile-pictures");
@@ -54,13 +84,18 @@ if (!app.Environment.IsDevelopment())
     app.UseExceptionHandler("/Home/Error");
     app.UseHsts();
 }
-
+if (app.Environment.IsDevelopment())
+{
+    app.UseSwagger();
+    app.UseSwaggerUI();
+}
 app.UseHttpsRedirection();
 app.UseStaticFiles();
 app.UseRouting();
 app.UseAuthentication();
 app.UseAuthorization();
 
+app.MapControllers();
 app.MapControllerRoute(
     name: "default",
     pattern: "{controller=Account}/{action=Login}/{id?}");
