@@ -47,12 +47,26 @@ builder.Services.AddControllersWithViews();
 builder.Services.AddSignalR();
 // JWT Authentication
 var jwtKey = builder.Configuration["Jwt:Key"];
+
 builder.Services.AddAuthentication(options =>
 {
-    // Default scheme দুটো আলাদা করো:
-    // MVC → Cookie, API → JWT
-    options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
-    options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+    options.DefaultScheme = "JWT_OR_COOKIE";
+    options.DefaultChallengeScheme = "JWT_OR_COOKIE";
+})
+.AddPolicyScheme("JWT_OR_COOKIE", "JWT or Cookie", options =>
+{
+    options.ForwardDefaultSelector = context =>
+    {
+        var authHeader = context.Request.Headers.Authorization.FirstOrDefault();
+        if (authHeader != null && authHeader.StartsWith("Bearer "))
+            return JwtBearerDefaults.AuthenticationScheme;
+
+        if (context.Request.Path.StartsWithSegments("/chatHub") &&
+            context.Request.Query.ContainsKey("access_token"))
+            return JwtBearerDefaults.AuthenticationScheme;
+
+        return IdentityConstants.ApplicationScheme;
+    };
 })
 .AddJwtBearer(options =>
 {
@@ -67,11 +81,27 @@ builder.Services.AddAuthentication(options =>
         IssuerSigningKey = new SymmetricSecurityKey(
             Encoding.UTF8.GetBytes(jwtKey!))
     };
-})
-.AddCookie();
+
+    options.Events = new JwtBearerEvents
+    {
+        OnMessageReceived = context =>
+        {
+            var accessToken = context.Request.Query["access_token"];
+            var path = context.HttpContext.Request.Path;
+
+            if (!string.IsNullOrEmpty(accessToken) &&
+                path.StartsWithSegments("/chatHub"))
+            {
+                context.Token = accessToken;
+            }
+
+            return Task.CompletedTask;
+        }
+    };
+});
+
 builder.Services.AddScoped<JwtService>();
 
-// Swagger (Flutter dev-এ test করতে সুবিধা হবে)
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 var app = builder.Build();

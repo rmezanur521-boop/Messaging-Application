@@ -1,7 +1,5 @@
-﻿// Models/DTOs/Common/ApiResponse.cs
-namespace MessagingApp.Models.DTOs.Common
+﻿namespace MessagingApp.Models.DTOs.Common
 {
-    // Flutter side-এ সব response একই structure-এ পাবে
     public class ApiResponse<T>
     {
         public bool Success { get; set; }

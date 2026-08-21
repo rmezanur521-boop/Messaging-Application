@@ -1,8 +1,8 @@
-﻿// Services/JwtService.cs
-using MessagingApp.Models.Domain;
+﻿using MessagingApp.Models.Domain;
 using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
+using System.Security.Cryptography;
 using System.Text;
 
 namespace MessagingApp.Services
@@ -16,7 +16,7 @@ namespace MessagingApp.Services
             _config = config;
         }
 
-        public string GenerateToken(AppUser user)
+        public string GenerateAccessToken(AppUser user)
         {
             var claims = new[]
             {
@@ -24,7 +24,7 @@ namespace MessagingApp.Services
                 new Claim(ClaimTypes.Email, user.Email!),
                 new Claim(ClaimTypes.Name, user.UserName!),
                 new Claim(JwtRegisteredClaimNames.Jti,
-                          Guid.NewGuid().ToString()) // unique token id
+                          Guid.NewGuid().ToString())
             };
 
             var key = new SymmetricSecurityKey(
@@ -33,8 +33,8 @@ namespace MessagingApp.Services
             var credentials = new SigningCredentials(
                 key, SecurityAlgorithms.HmacSha256);
 
-            var expiry = DateTime.UtcNow.AddDays(
-                int.Parse(_config["Jwt:ExpiryInDays"]!));
+            var expiry = DateTime.UtcNow.AddMinutes(
+                int.Parse(_config["Jwt:AccessTokenExpiryMinutes"]!));
 
             var token = new JwtSecurityToken(
                 issuer: _config["Jwt:Issuer"],
@@ -46,5 +46,18 @@ namespace MessagingApp.Services
 
             return new JwtSecurityTokenHandler().WriteToken(token);
         }
+        public string GenerateRefreshToken()
+        {
+            var randomBytes = new byte[64];
+            using var rng = RandomNumberGenerator.Create();
+            rng.GetBytes(randomBytes);
+            return Convert.ToBase64String(randomBytes);
+        }
+
+        public int GetRefreshTokenExpiryDays() =>
+            int.Parse(_config["Jwt:RefreshTokenExpiryDays"]!);
+
+        public int GetAccessTokenExpiryMinutes() =>
+            int.Parse(_config["Jwt:AccessTokenExpiryMinutes"]!);
     }
 }

@@ -19,5 +19,6 @@ namespace MessagingApp.Models.Domain
         public ICollection<Message> ReceivedMessages { get; set; } = new List<Message>();
         public ICollection<GroupMember> GroupMemberships { get; set; } = new List<GroupMember>();
         public ICollection<GroupMessage> GroupMessages { get; set; } = new List<GroupMessage>();
+        public ICollection<RefreshToken> RefreshTokens { get; set; } = new List<RefreshToken>();
     }
 }

@@ -1,10 +1,12 @@
-﻿// Controllers/Api/AuthApiController.cs
+﻿using MessagingApp.Data;
 using MessagingApp.Models.Domain;
 using MessagingApp.Models.DTOs.Auth;
 using MessagingApp.Models.DTOs.Common;
 using MessagingApp.Services;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using System.Security.Claims;
 
 namespace MessagingApp.Controllers.Api
 {
@@ -15,15 +17,45 @@ namespace MessagingApp.Controllers.Api
         private readonly UserManager<AppUser> _userManager;
         private readonly SignInManager<AppUser> _signInManager;
         private readonly JwtService _jwtService;
+        private readonly AppDbContext _context;
 
         public AuthApiController(
             UserManager<AppUser> userManager,
             SignInManager<AppUser> signInManager,
-            JwtService jwtService)
+            JwtService jwtService,
+            AppDbContext context)
         {
             _userManager = userManager;
             _signInManager = signInManager;
             _jwtService = jwtService;
+            _context = context;
+        }
+
+        // Login/Register এর পর access + refresh token একসাথে বানিয়ে DB তে save করে
+        private async Task<AuthResponse> GenerateAuthResponseAsync(AppUser user)
+        {
+            var accessToken = _jwtService.GenerateAccessToken(user);
+            var refreshTokenValue = _jwtService.GenerateRefreshToken();
+
+            var refreshToken = new RefreshToken
+            {
+                Token = refreshTokenValue,
+                UserId = user.Id,
+                ExpiresAt = DateTime.UtcNow.AddDays(_jwtService.GetRefreshTokenExpiryDays())
+            };
+
+            _context.RefreshTokens.Add(refreshToken);
+            await _context.SaveChangesAsync();
+
+            return new AuthResponse
+            {
+                Token = accessToken,
+                RefreshToken = refreshTokenValue,
+                UserId = user.Id,
+                UserName = user.UserName!,
+                Email = user.Email!,
+                ExpiresAt = DateTime.UtcNow.AddMinutes(_jwtService.GetAccessTokenExpiryMinutes())
+            };
         }
 
         // POST: api/auth/login
@@ -43,16 +75,7 @@ namespace MessagingApp.Controllers.Api
             if (!result.Succeeded)
                 return Unauthorized(ApiResponse<string>.Fail("Invalid credentials"));
 
-            var token = _jwtService.GenerateToken(user);
-
-            var response = new AuthResponse
-            {
-                Token = token,
-                UserId = user.Id,
-                UserName = user.UserName!,
-                Email = user.Email!,
-                ExpiresAt = DateTime.UtcNow.AddDays(7)
-            };
+            var response = await GenerateAuthResponseAsync(user);
 
             return Ok(ApiResponse<AuthResponse>.Ok(response, "Login successful"));
         }
@@ -82,27 +105,55 @@ namespace MessagingApp.Controllers.Api
                 return BadRequest(ApiResponse<string>.Fail(errors));
             }
 
-            var token = _jwtService.GenerateToken(user);
-
-            var response = new AuthResponse
-            {
-                Token = token,
-                UserId = user.Id,
-                UserName = user.UserName!,
-                Email = user.Email!,
-                ExpiresAt = DateTime.UtcNow.AddDays(7)
-            };
+            var response = await GenerateAuthResponseAsync(user);
 
             return Ok(ApiResponse<AuthResponse>.Ok(response, "Registration successful"));
         }
 
-        // GET: api/auth/me  ← Flutter app startup-এ token validate করতে
+        // POST: api/auth/refresh-token
+        [HttpPost("refresh-token")]
+        public async Task<IActionResult> RefreshToken([FromBody] RefreshTokenRequest request)
+        {
+            var storedToken = await _context.RefreshTokens
+                .Include(rt => rt.User)
+                .FirstOrDefaultAsync(rt => rt.Token == request.RefreshToken);
+
+            if (storedToken == null || !storedToken.IsActive)
+                return Unauthorized(ApiResponse<string>.Fail("Invalid or expired refresh token"));
+            storedToken.IsRevoked = true;
+
+            var response = await GenerateAuthResponseAsync(storedToken.User);
+
+            await _context.SaveChangesAsync();
+
+            return Ok(ApiResponse<AuthResponse>.Ok(response, "Token refreshed"));
+        }
+
+        // POST: api/auth/logout
+        [HttpPost("logout")]
+        [Microsoft.AspNetCore.Authorization.Authorize(AuthenticationSchemes = "Bearer")]
+        public async Task<IActionResult> Logout([FromBody] RefreshTokenRequest request)
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+            var storedToken = await _context.RefreshTokens
+                .FirstOrDefaultAsync(rt => rt.Token == request.RefreshToken && rt.UserId == userId);
+
+            if (storedToken == null)
+                return NotFound(ApiResponse<string>.Fail("Refresh token not found"));
+
+            storedToken.IsRevoked = true;
+            await _context.SaveChangesAsync();
+
+            return Ok(ApiResponse<string>.Ok("", "Logged out successfully"));
+        }
+
+        // GET: api/auth/me
         [HttpGet("me")]
-        [Microsoft.AspNetCore.Authorization.Authorize]
+        [Microsoft.AspNetCore.Authorization.Authorize(AuthenticationSchemes = "Bearer")]
         public async Task<IActionResult> GetCurrentUser()
         {
-            var userId = User.FindFirst(
-                System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
 
             var user = await _userManager.FindByIdAsync(userId!);
             if (user == null) return NotFound();
