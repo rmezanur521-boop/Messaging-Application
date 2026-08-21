@@ -45,6 +45,16 @@ builder.Services.AddScoped<IFileService, FileService>();
 
 // MVC + SignalR
 builder.Services.AddControllersWithViews();
+// Add CORS Policy
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowAll", policy =>
+    {
+        policy.AllowAnyOrigin()
+              .AllowAnyHeader()
+              .AllowAnyMethod();
+    });
+});
 builder.Services.AddSignalR();
 // JWT Authentication
 var jwtKey = builder.Configuration["Jwt:Key"];
@@ -127,6 +137,7 @@ if (!app.Environment.IsDevelopment())
 }
 app.UseStaticFiles();
 app.UseRouting();
+app.UseCors("AllowAll");
 app.UseAuthentication();
 app.UseAuthorization();
 
