@@ -5,11 +5,13 @@ namespace MessagingApp.Services
     public class FileService : IFileService
     {
         private readonly IWebHostEnvironment _env;
+        private readonly IHttpContextAccessor _httpContextAccessor;
         private const string UploadFolder = "uploads/profile-pictures";
 
-        public FileService(IWebHostEnvironment env)
+        public FileService(IWebHostEnvironment env, IHttpContextAccessor httpContextAccessor)
         {
             _env = env;
+            _httpContextAccessor = httpContextAccessor;
         }
 
         public async Task<string?> SaveProfilePictureAsync(IFormFile file)
@@ -39,6 +41,17 @@ namespace MessagingApp.Services
             var path = Path.Combine(_env.WebRootPath, UploadFolder, fileName);
             if (File.Exists(path))
                 File.Delete(path);
+        }
+
+        // Converts stored filename into a full URL the Flutter app can load directly.
+        public string? GetProfilePictureUrl(string? fileName)
+        {
+            if (string.IsNullOrEmpty(fileName)) return null;
+
+            var request = _httpContextAccessor.HttpContext?.Request;
+            if (request == null) return null;
+
+            return $"{request.Scheme}://{request.Host}/{UploadFolder}/{fileName}";
         }
     }
 }

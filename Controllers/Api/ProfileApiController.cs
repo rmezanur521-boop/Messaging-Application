@@ -78,7 +78,6 @@ namespace MessagingApp.Controllers.Api
         }
 
         // POST: api/profile/picture
-        // Flutter এ profile picture upload করতে
         [HttpPost("picture")]
         public async Task<IActionResult> UpdateProfilePicture(IFormFile file)
         {
@@ -90,6 +89,7 @@ namespace MessagingApp.Controllers.Api
 
             var user = await _userManager.FindByIdAsync(currentUserId);
             if (user == null) return NotFound();
+
             _fileService.DeleteProfilePicture(user.ProfilePicture);
 
             var fileName = await _fileService.SaveProfilePictureAsync(file);
@@ -99,11 +99,12 @@ namespace MessagingApp.Controllers.Api
             user.ProfilePicture = fileName;
             await _userManager.UpdateAsync(user);
 
-            return Ok(ApiResponse<object>.Ok(new { profilePicture = fileName }, "Picture updated"));
+            var fullUrl = _fileService.GetProfilePictureUrl(fileName);
+            return Ok(ApiResponse<object>.Ok(new { profilePicture = fullUrl }, "Picture updated"));
         }
 
-        // Helper — Domain → DTO mapping
-        private static object MapToDto(AppUser user) => new
+        // Domain -> DTO mapping. Instance method now, so it can build the full picture URL.
+        private object MapToDto(AppUser user) => new
         {
             user.Id,
             user.UserName,
@@ -113,7 +114,7 @@ namespace MessagingApp.Controllers.Api
             user.Bio,
             user.Gender,
             user.DateOfBirth,
-            user.ProfilePicture,
+            ProfilePicture = _fileService.GetProfilePictureUrl(user.ProfilePicture),
             user.CreatedAt
         };
     }

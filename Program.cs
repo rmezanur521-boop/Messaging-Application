@@ -37,6 +37,7 @@ builder.Services.ConfigureApplicationCookie(options =>
 });
 
 // Services
+builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<IFriendService, FriendService>();
 builder.Services.AddScoped<IChatService, ChatService>();
 builder.Services.AddScoped<IGroupService, GroupService>();
@@ -105,6 +106,7 @@ builder.Services.AddScoped<JwtService>();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 var app = builder.Build();
+app.UseMiddleware<MessagingApp.Middleware.ExceptionHandlingMiddleware>();
 // Auto-create uploads directory
 var uploadsPath = Path.Combine(builder.Environment.WebRootPath, "uploads", "profile-pictures");
 if (!Directory.Exists(uploadsPath))
@@ -119,7 +121,10 @@ if (app.Environment.IsDevelopment())
     app.UseSwagger();
     app.UseSwaggerUI();
 }
-app.UseHttpsRedirection();
+if (!app.Environment.IsDevelopment())
+{
+    app.UseHttpsRedirection();
+}
 app.UseStaticFiles();
 app.UseRouting();
 app.UseAuthentication();
