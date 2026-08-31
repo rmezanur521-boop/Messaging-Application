@@ -31,7 +31,6 @@ namespace MessagingApp.Controllers.Api
             _context = context;
         }
 
-        // Login/Register এর পর access + refresh token একসাথে বানিয়ে DB তে save করে
         private async Task<AuthResponse> GenerateAuthResponseAsync(AppUser user)
         {
             var accessToken = _jwtService.GenerateAccessToken(user);
@@ -93,8 +92,10 @@ namespace MessagingApp.Controllers.Api
 
             var user = new AppUser
             {
-                UserName = request.UserName,
-                Email = request.Email
+                UserName = request.Email,
+                Email = request.Email,
+                FirstName = request.FirstName,
+                LastName = request.LastName
             };
 
             var result = await _userManager.CreateAsync(user, request.Password);

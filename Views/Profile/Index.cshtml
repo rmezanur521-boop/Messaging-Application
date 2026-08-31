@@ -16,7 +16,7 @@
                 else
                 {
                     <div class="profile-avatar-placeholder">
-                        @Model.FirstName[0]@Model.LastName[0]
+                        @(Model.FirstName.Length > 0 ? Model.FirstName[0].ToString() : "")@(Model.LastName.Length > 0 ? Model.LastName[0].ToString() : "")
                     </div>
                 }
             </div>

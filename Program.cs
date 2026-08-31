@@ -45,14 +45,16 @@ builder.Services.AddScoped<IFileService, FileService>();
 
 // MVC + SignalR
 builder.Services.AddControllersWithViews();
-// Add CORS Policy
+
+// Updated CORS Policy for Web & SignalR Compatibility
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowAll", policy =>
     {
-        policy.AllowAnyOrigin()
+        policy.SetIsOriginAllowed(origin => true) // dynamic ports (like http://localhost:49878) allow করবে
               .AllowAnyHeader()
-              .AllowAnyMethod();
+              .AllowAnyMethod()
+              .AllowCredentials(); 
     });
 });
 builder.Services.AddSignalR();
