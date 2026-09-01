@@ -33,6 +33,13 @@
                    class="btn-manage"><i class="fa fa-cog" aria-hidden="true"></i> Manage</a>
             }
             <button class="btn-members-toggle" id="membersToggle" title="Members"><i class="fa fa-users" aria-hidden="true"></i> </button>
+            <form asp-controller="Group" asp-action="LeaveGroup" method="post" style="display:inline">
+                <input type="hidden" name="groupId" value="@Model.GroupId" />
+                <button type="submit" class="btn-sm-reject"
+                        onclick="return confirm('Are you sure you want to leave this group?')">
+                    <i class="fa fa-sign-out" aria-hidden="true"></i> Leave
+                </button>
+            </form>
         </div>
     </div>
 
@@ -129,7 +136,7 @@
             <div class="members-list">
                 @foreach (var member in Model.Members)
                 {
-                    <div class="member-item">
+                    <div class="member-item" data-user-id="@member.UserId">
                         <div class="member-avatar">
                             @if (!string.IsNullOrEmpty(member.ProfilePicture))
                             {

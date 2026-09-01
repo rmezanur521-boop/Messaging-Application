@@ -13,5 +13,6 @@ namespace MessagingApp.Services.Interfaces
         Task<bool> AreFriendsAsync(string userId1, string userId2);
         Task<bool> RemoveFriendAsync(string userId, string friendId);
         Task<List<FriendViewModel>> GetSuggestedFriendsAsync(string currentUserId);
+        Task<string?> GetRequestStatusAsync(string currentUserId, string otherUserId);
     }
 }

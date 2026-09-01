@@ -1,7 +1,9 @@
-﻿using MessagingApp.Models.DTOs.Common;
+﻿using MessagingApp.Hubs;
+using MessagingApp.Models.DTOs.Common;
 using MessagingApp.Services.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.SignalR;
 using System.Security.Claims;
 
 namespace MessagingApp.Controllers.Api
@@ -12,14 +14,17 @@ namespace MessagingApp.Controllers.Api
     public class GroupsApiController : ControllerBase
     {
         private readonly IGroupService _groupService;
+        private readonly IHubContext<ChatHub> _hubContext;
 
-        public GroupsApiController(IGroupService groupService)
+        public GroupsApiController(IGroupService groupService, IHubContext<ChatHub> hubContext)
         {
             _groupService = groupService;
+            _hubContext = hubContext;
         }
 
         private string? GetCurrentUserId() =>
             User.FindFirstValue(ClaimTypes.NameIdentifier);
+
 
         // GET: api/groups/previews
         [HttpGet("previews")]
@@ -146,6 +151,56 @@ namespace MessagingApp.Controllers.Api
                 return NotFound(ApiResponse<string>.Fail("Member not found"));
 
             return Ok(ApiResponse<string>.Ok("Removed", "Member removed"));
+        }
+
+        [HttpPost("{groupId}/leave")]
+        public async Task<IActionResult> LeaveGroup(int groupId)
+        {
+            var currentUserId = GetCurrentUserId();
+            if (currentUserId == null) return Unauthorized();
+
+            var result = await _groupService.LeaveGroupAsync(groupId, currentUserId);
+            if (!result.Success)
+                return NotFound(ApiResponse<string>.Fail("Not a member of this group"));
+
+            if (result.GroupDeleted)
+            {
+                await _hubContext.Clients.Group($"group_{groupId}")
+                    .SendAsync("GroupDeleted", groupId);
+            }
+            else
+            {
+                await _hubContext.Clients.Group($"group_{groupId}")
+                    .SendAsync("MemberLeft", new { groupId, userId = currentUserId });
+
+                if (result.NewAdminId != null)
+                {
+                    await _hubContext.Clients.Group($"group_{groupId}")
+                        .SendAsync("AdminChanged", new { groupId, newAdminId = result.NewAdminId });
+                }
+            }
+
+            return Ok(ApiResponse<object>.Ok(new
+            {
+                groupDeleted = result.GroupDeleted,
+                newAdminId = result.NewAdminId
+            }, "Left group"));
+        }
+
+        [HttpDelete("{groupId}")]
+        public async Task<IActionResult> DeleteGroup(int groupId)
+        {
+            var currentUserId = GetCurrentUserId();
+            if (currentUserId == null) return Unauthorized();
+
+            var result = await _groupService.DeleteGroupAsync(groupId, currentUserId);
+            if (!result)
+                return Forbid();
+
+            await _hubContext.Clients.Group($"group_{groupId}")
+                .SendAsync("GroupDeleted", groupId);
+
+            return Ok(ApiResponse<string>.Ok("Deleted", "Group deleted"));
         }
     }
 

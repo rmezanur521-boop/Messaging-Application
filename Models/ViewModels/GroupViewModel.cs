@@ -39,4 +39,11 @@
         public List<GroupMemberViewModel> Members { get; set; } = new();
         public List<FriendSelectItem> FriendsNotInGroup { get; set; } = new();
     }
+
+    public class GroupLeaveResult
+    {
+        public bool Success { get; set; }
+        public bool GroupDeleted { get; set; }
+        public string? NewAdminId { get; set; }
+    }
 }

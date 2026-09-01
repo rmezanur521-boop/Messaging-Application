@@ -15,5 +15,7 @@ namespace MessagingApp.Services.Interfaces
         Task<List<GroupPreviewViewModel>> GetGroupPreviewsAsync(string userId);
         Task<bool> IsGroupAdminAsync(int groupId, string userId);
         Task<bool> IsMemberAsync(int groupId, string userId);
+        Task<GroupLeaveResult> LeaveGroupAsync(int groupId, string userId);
+        Task<bool> DeleteGroupAsync(int groupId, string userId);
     }
 }

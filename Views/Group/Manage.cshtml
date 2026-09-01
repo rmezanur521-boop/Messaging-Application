@@ -99,4 +99,17 @@
             </div>
         </div>
     }
+    @if (Model.Members.Any())
+    {
+        <div class="section-card">
+            <h3 class="section-title" style="color:#dc3545">Danger Zone</h3>
+            <form asp-controller="Group" asp-action="DeleteGroup" method="post">
+                <input type="hidden" name="groupId" value="@Model.GroupId" />
+                <button type="submit" class="btn-sm-reject"
+                        onclick="return confirm('Are you sure you want to permanently delete this group? This cannot be undone.')">
+                    Delete Group
+                </button>
+            </form>
+        </div>
+    }
 </div>

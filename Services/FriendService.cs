@@ -9,12 +9,13 @@ namespace MessagingApp.Services
     public class FriendService : IFriendService
     {
         private readonly AppDbContext _db;
+        private readonly IFileService _fileService;
 
-        public FriendService(AppDbContext db)
+        public FriendService(AppDbContext db, IFileService fileService)
         {
             _db = db;
+            _fileService = fileService;
         }
-
         public async Task<List<FriendViewModel>> GetFriendsAsync(string userId)
         {
             var friendships = await _db.Friendships
@@ -30,7 +31,7 @@ namespace MessagingApp.Services
                 {
                     Id = friend.Id,
                     FullName = $"{friend.FirstName} {friend.LastName}",
-                    ProfilePicture = friend.ProfilePicture,
+                    ProfilePicture = _fileService.GetProfilePictureUrl(friend.ProfilePicture),
                     Bio = friend.Bio
                 };
             }).ToList();
@@ -38,18 +39,19 @@ namespace MessagingApp.Services
 
         public async Task<List<FriendRequestViewModel>> GetPendingRequestsAsync(string userId)
         {
-            return await _db.FriendRequests
+            var requests = await _db.FriendRequests
                 .Where(r => r.ReceiverId == userId && r.Status == FriendRequestStatus.Pending)
                 .Include(r => r.Sender)
-                .Select(r => new FriendRequestViewModel
-                {
-                    Id = r.Id,
-                    SenderId = r.SenderId,
-                    SenderName = $"{r.Sender.FirstName} {r.Sender.LastName}",
-                    SenderProfilePicture = r.Sender.ProfilePicture,
-                    SentAt = r.SentAt
-                })
                 .ToListAsync();
+
+            return requests.Select(r => new FriendRequestViewModel
+            {
+                Id = r.Id,
+                SenderId = r.SenderId,
+                SenderName = $"{r.Sender.FirstName} {r.Sender.LastName}",
+                SenderProfilePicture = _fileService.GetProfilePictureUrl(r.Sender.ProfilePicture),
+                SentAt = r.SentAt
+            }).ToList();
         }
 
         public async Task<List<FriendViewModel>> SearchUsersAsync(string query, string currentUserId)
@@ -59,35 +61,32 @@ namespace MessagingApp.Services
 
             query = query.ToLower();
 
-            return await _db.Users
+            var users = await _db.Users
                 .Where(u => u.Id != currentUserId &&
                     (
                         u.FirstName.ToLower().Contains(query) ||
                         u.LastName.ToLower().Contains(query) ||
                         u.Email!.ToLower().Contains(query)
                     ))
-                .Select(u => new FriendViewModel
-                {
-                    Id = u.Id,
-                    FullName = $"{u.FirstName} {u.LastName}",
-                    ProfilePicture = u.ProfilePicture,
-                    Bio = u.Bio,
-
-                    // ✅ Already friend
-                    IsFriend = _db.Friendships.Any(f =>
-                        (f.UserId == currentUserId && f.FriendId == u.Id) ||
-                        (f.UserId == u.Id && f.FriendId == currentUserId)
-                    ),
-
-                    // ✅ Request sent
-                    IsRequestSent = _db.FriendRequests.Any(r =>
-                        r.SenderId == currentUserId &&
-                        r.ReceiverId == u.Id &&
-                        r.Status == FriendRequestStatus.Pending
-                    )
-                })
                 .Take(20)
                 .ToListAsync();
+
+            return users.Select(u => new FriendViewModel
+            {
+                Id = u.Id,
+                FullName = $"{u.FirstName} {u.LastName}",
+                ProfilePicture = _fileService.GetProfilePictureUrl(u.ProfilePicture),
+                Bio = u.Bio,
+                IsFriend = _db.Friendships.Any(f =>
+                    (f.UserId == currentUserId && f.FriendId == u.Id) ||
+                    (f.UserId == u.Id && f.FriendId == currentUserId)
+                ),
+                IsRequestSent = _db.FriendRequests.Any(r =>
+                    r.SenderId == currentUserId &&
+                    r.ReceiverId == u.Id &&
+                    r.Status == FriendRequestStatus.Pending
+                )
+            }).ToList();
         }
 
         public async Task<bool> SendFriendRequestAsync(string senderId, string receiverId)
@@ -196,21 +195,31 @@ namespace MessagingApp.Services
                 .Select(r => r.SenderId == currentUserId ? r.ReceiverId : r.SenderId)
                 .ToListAsync();
 
-            return await _db.Users
+            var users = await _db.Users
                 .Where(u => u.Id != currentUserId &&
                             !friendIds.Contains(u.Id) &&
                             !pendingRequestIds.Contains(u.Id))
-                .Select(u => new FriendViewModel
-                {
-                    Id = u.Id,
-                    FullName = $"{u.FirstName} {u.LastName}",
-                    ProfilePicture = u.ProfilePicture,
-                    Bio = u.Bio,
-                    IsFriend = false,
-                    IsRequestSent = false
-                })
                 .Take(10)
                 .ToListAsync();
+
+            return users.Select(u => new FriendViewModel
+            {
+                Id = u.Id,
+                FullName = $"{u.FirstName} {u.LastName}",
+                ProfilePicture = _fileService.GetProfilePictureUrl(u.ProfilePicture),
+                Bio = u.Bio,
+                IsFriend = false,
+                IsRequestSent = false
+            }).ToList();
+        }
+        public async Task<string?> GetRequestStatusAsync(string currentUserId, string otherUserId)
+        {
+            var pending = await _db.FriendRequests.AnyAsync(r =>
+                r.SenderId == currentUserId &&
+                r.ReceiverId == otherUserId &&
+                r.Status == FriendRequestStatus.Pending);
+
+            return pending ? "pending" : null;
         }
 
     }

@@ -9,10 +9,12 @@ namespace MessagingApp.Services
     public class GroupService : IGroupService
     {
         private readonly AppDbContext _db;
+        private readonly IFileService _fileService;
 
-        public GroupService(AppDbContext db)
+        public GroupService(AppDbContext db, IFileService fileService)
         {
             _db = db;
+            _fileService = fileService;
         }
 
         public async Task<int> CreateGroupAsync(string creatorId, string name, List<string> memberIds)
@@ -84,7 +86,7 @@ namespace MessagingApp.Services
                 {
                     UserId = m.UserId,
                     FullName = $"{m.User.FirstName} {m.User.LastName}",
-                    ProfilePicture = m.User.ProfilePicture,
+                    ProfilePicture = _fileService.GetProfilePictureUrl(m.User.ProfilePicture),
                     Role = m.Role.ToString()
                 }).ToList()
             };
@@ -116,7 +118,7 @@ namespace MessagingApp.Services
                 {
                     Id = friend.Id,
                     FullName = $"{friend.FirstName} {friend.LastName}",
-                    ProfilePicture = friend.ProfilePicture
+                    ProfilePicture = _fileService.GetProfilePictureUrl(friend.ProfilePicture)
                 };
             })
             .Where(f => !memberIds.Contains(f.Id))
@@ -130,7 +132,7 @@ namespace MessagingApp.Services
                 {
                     UserId = m.UserId,
                     FullName = $"{m.User.FirstName} {m.User.LastName}",
-                    ProfilePicture = m.User.ProfilePicture,
+                    ProfilePicture = _fileService.GetProfilePictureUrl(m.User.ProfilePicture),
                     Role = m.Role.ToString()
                 }).ToList(),
                 FriendsNotInGroup = friendItems
@@ -269,6 +271,60 @@ namespace MessagingApp.Services
         {
             return await _db.GroupMembers.AnyAsync(m =>
                 m.GroupId == groupId && m.UserId == userId);
+        }
+        public async Task<GroupLeaveResult> LeaveGroupAsync(int groupId, string userId)
+        {
+            var member = await _db.GroupMembers
+                .FirstOrDefaultAsync(m => m.GroupId == groupId && m.UserId == userId);
+
+            if (member == null)
+                return new GroupLeaveResult { Success = false };
+
+            bool wasAdmin = member.Role == GroupRole.Admin;
+            _db.GroupMembers.Remove(member);
+            await _db.SaveChangesAsync();
+
+            var remainingMembers = await _db.GroupMembers
+                .Where(m => m.GroupId == groupId)
+                .OrderBy(m => m.JoinedAt)
+                .ToListAsync();
+
+            if (!remainingMembers.Any())
+            {
+                var group = await _db.Groups.FindAsync(groupId);
+                if (group != null)
+                {
+                    _db.Groups.Remove(group);
+                    await _db.SaveChangesAsync();
+                }
+
+                return new GroupLeaveResult { Success = true, GroupDeleted = true };
+            }
+
+            string? newAdminId = null;
+
+            if (wasAdmin && !remainingMembers.Any(m => m.Role == GroupRole.Admin))
+            {
+                var nextAdmin = remainingMembers.First();
+                nextAdmin.Role = GroupRole.Admin;
+                await _db.SaveChangesAsync();
+                newAdminId = nextAdmin.UserId;
+            }
+
+            return new GroupLeaveResult { Success = true, NewAdminId = newAdminId };
+        }
+
+        public async Task<bool> DeleteGroupAsync(int groupId, string userId)
+        {
+            var isAdmin = await IsGroupAdminAsync(groupId, userId);
+            if (!isAdmin) return false;
+
+            var group = await _db.Groups.FindAsync(groupId);
+            if (group == null) return false;
+
+            _db.Groups.Remove(group);
+            await _db.SaveChangesAsync();
+            return true;
         }
     }
 }

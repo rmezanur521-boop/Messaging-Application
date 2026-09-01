@@ -100,6 +100,10 @@ namespace MessagingApp.Hubs
             await Groups.AddToGroupAsync(Context.ConnectionId, $"group_{groupId}");
         }
 
+        public async Task LeaveGroupConnection(int groupId)
+        {
+            await Groups.RemoveFromGroupAsync(Context.ConnectionId, $"group_{groupId}");
+        }
         public async Task SendGroupMessage(int groupId, string content)
         {
             var senderId = Context.UserIdentifier!;

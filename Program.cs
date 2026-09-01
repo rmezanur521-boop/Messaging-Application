@@ -119,7 +119,6 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 var app = builder.Build();
 app.UseMiddleware<MessagingApp.Middleware.ExceptionHandlingMiddleware>();
-// Auto-create uploads directory
 var uploadsPath = Path.Combine(builder.Environment.WebRootPath, "uploads", "profile-pictures");
 if (!Directory.Exists(uploadsPath))
     Directory.CreateDirectory(uploadsPath);
@@ -137,9 +136,9 @@ if (!app.Environment.IsDevelopment())
 {
     app.UseHttpsRedirection();
 }
-app.UseStaticFiles();
 app.UseRouting();
 app.UseCors("AllowAll");
+app.UseStaticFiles();
 app.UseAuthentication();
 app.UseAuthorization();
 

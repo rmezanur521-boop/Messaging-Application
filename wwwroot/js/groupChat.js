@@ -62,6 +62,38 @@ connection.on("GroupUserStoppedTyping", function (userId) {
         document.getElementById('typingIndicator').style.display = 'none';
     }
 });
+connection.on("GroupDeleted", function (deletedGroupId) {
+    if (deletedGroupId === groupId) {
+        alert("This group has been deleted.");
+        window.location.href = "/Chat";
+    }
+});
+
+connection.on("MemberLeft", function (data) {
+    if (data.groupId !== groupId) return;
+    const memberItems = document.querySelectorAll('.member-item');
+    memberItems.forEach(item => {
+        if (item.dataset.userId === data.userId) {
+            item.remove();
+        }
+    });
+});
+
+connection.on("AdminChanged", function (data) {
+    if (data.groupId !== groupId) return;
+    const memberItems = document.querySelectorAll('.member-item');
+    memberItems.forEach(item => {
+        if (item.dataset.userId === data.newAdminId) {
+            const infoDiv = item.querySelector('.member-info');
+            if (infoDiv && !infoDiv.querySelector('.member-role-badge')) {
+                const badge = document.createElement('span');
+                badge.className = 'member-role-badge';
+                badge.textContent = 'Admin';
+                infoDiv.appendChild(badge);
+            }
+        }
+    });
+});
 
 // ── Send Message ─────────────────────────────────────────────
 

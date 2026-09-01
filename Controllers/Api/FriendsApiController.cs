@@ -125,5 +125,14 @@ namespace MessagingApp.Controllers.Api
             var suggestions = await _friendService.GetSuggestedFriendsAsync(currentUserId);
             return Ok(ApiResponse<object>.Ok(suggestions));
         }
+        [HttpGet("request-status/{userId}")]
+        public async Task<IActionResult> GetRequestStatus(string userId)
+        {
+            var currentUserId = GetCurrentUserId();
+            if (currentUserId == null) return Unauthorized();
+
+            var status = await _friendService.GetRequestStatusAsync(currentUserId, userId);
+            return Ok(ApiResponse<object>.Ok(new { userId, status }));
+        }
     }
 }

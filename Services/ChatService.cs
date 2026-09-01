@@ -9,10 +9,12 @@ namespace MessagingApp.Services
     public class ChatService : IChatService
     {
         private readonly AppDbContext _db;
+        private readonly IFileService _fileService;
 
-        public ChatService(AppDbContext db)
+        public ChatService(AppDbContext db, IFileService fileService)
         {
             _db = db;
+            _fileService = fileService;
         }
 
         public async Task<List<MessageViewModel>> GetConversationAsync(string userId1, string userId2, string currentUserId)
@@ -121,7 +123,7 @@ namespace MessagingApp.Services
                     {
                         FriendId = friend.Id,
                         FriendName = $"{friend.FirstName} {friend.LastName}",
-                        FriendProfilePicture = friend.ProfilePicture,
+                        FriendProfilePicture = _fileService.GetProfilePictureUrl(friend.ProfilePicture),
                         LastMessage = last.IsDeleted ? "Message deleted" : last.Content,
                         LastMessageTime = last.SentAt
                     };
