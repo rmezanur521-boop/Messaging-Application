@@ -183,5 +183,35 @@ namespace MessagingApp.Services
             return true;
 
         }
+        public async Task<List<FriendViewModel>> GetSuggestedFriendsAsync(string currentUserId)
+        {
+            var friendIds = await _db.Friendships
+                .Where(f => f.UserId == currentUserId || f.FriendId == currentUserId)
+                .Select(f => f.UserId == currentUserId ? f.FriendId : f.UserId)
+                .ToListAsync();
+
+            var pendingRequestIds = await _db.FriendRequests
+                .Where(r => (r.SenderId == currentUserId || r.ReceiverId == currentUserId) &&
+                            r.Status == FriendRequestStatus.Pending)
+                .Select(r => r.SenderId == currentUserId ? r.ReceiverId : r.SenderId)
+                .ToListAsync();
+
+            return await _db.Users
+                .Where(u => u.Id != currentUserId &&
+                            !friendIds.Contains(u.Id) &&
+                            !pendingRequestIds.Contains(u.Id))
+                .Select(u => new FriendViewModel
+                {
+                    Id = u.Id,
+                    FullName = $"{u.FirstName} {u.LastName}",
+                    ProfilePicture = u.ProfilePicture,
+                    Bio = u.Bio,
+                    IsFriend = false,
+                    IsRequestSent = false
+                })
+                .Take(10)
+                .ToListAsync();
+        }
+
     }
 }

@@ -115,5 +115,15 @@ namespace MessagingApp.Controllers.Api
 
             return Ok(ApiResponse<string>.Ok("Removed", "Friend removed"));
         }
+
+        [HttpGet("suggested")]
+        public async Task<IActionResult> GetSuggestedFriends()
+        {
+            var currentUserId = GetCurrentUserId();
+            if (currentUserId == null) return Unauthorized();
+
+            var suggestions = await _friendService.GetSuggestedFriendsAsync(currentUserId);
+            return Ok(ApiResponse<object>.Ok(suggestions));
+        }
     }
 }
