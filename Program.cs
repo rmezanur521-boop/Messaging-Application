@@ -10,10 +10,14 @@ using Microsoft.IdentityModel.Tokens;
 using System.Text;
 var builder = WebApplication.CreateBuilder(args);
 
+var renderPort = Environment.GetEnvironmentVariable("PORT");
+if (!string.IsNullOrEmpty(renderPort))
+{
+    builder.WebHost.UseUrls($"http://+:{renderPort}");
+}
 // Database
 builder.Services.AddDbContext<AppDbContext>(options =>
-    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
-
+    options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
 // Identity
 builder.Services.AddIdentity<AppUser, IdentityRole>(options =>
 {
@@ -118,6 +122,13 @@ builder.Services.AddScoped<JwtService>();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 var app = builder.Build();
+
+using (var scope = app.Services.CreateScope())
+{
+    var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+    db.Database.Migrate();
+}
+
 app.UseMiddleware<MessagingApp.Middleware.ExceptionHandlingMiddleware>();
 var uploadsPath = Path.Combine(builder.Environment.WebRootPath, "uploads", "profile-pictures");
 if (!Directory.Exists(uploadsPath))
