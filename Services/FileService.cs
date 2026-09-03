@@ -40,7 +40,7 @@ namespace MessagingApp.Services
             return key;
         }
 
-        public async void DeleteProfilePicture(string? key)
+        public async Task DeleteProfilePictureAsync(string? key)
         {
             if (string.IsNullOrEmpty(key)) return;
             await _s3.DeleteObjectAsync(_bucket, key);

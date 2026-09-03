@@ -3,7 +3,7 @@
     public interface IFileService
     {
         Task<string?> SaveProfilePictureAsync(IFormFile file);
-        void DeleteProfilePicture(string? fileName);
+        Task DeleteProfilePictureAsync(string? fileName);
         string? GetProfilePictureUrl(string? fileName);
     }
 }

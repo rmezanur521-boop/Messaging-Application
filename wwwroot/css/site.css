@@ -780,7 +780,9 @@ body {
 /* ── Edit Profile ── */
 .edit-profile-page {
     max-width: 560px;
+    width: 100%;
     margin: 0 auto;
+    overflow-x: hidden;
 }
 
 .edit-card {
@@ -823,6 +825,9 @@ body {
     }
 
 .btn-upload {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
     padding: 7px 18px;
     background: var(--bg);
     border: 2px solid var(--border);
@@ -847,6 +852,7 @@ body {
     display: flex;
     flex-direction: column;
     margin-bottom: 16px;
+    min-width: 0;
 }
 
     .form-group label {
@@ -1027,6 +1033,20 @@ body {
         grid-template-columns: 1fr;
     }
 
+    .edit-card {
+        padding: 18px;
+    }
+
+    .edit-actions {
+        flex-direction: column;
+    }
+
+        .edit-actions .btn-save,
+        .edit-actions .btn-cancel {
+            width: 100%;
+            text-align: center;
+        }
+
     .friends-grid {
         grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
     }
@@ -1037,6 +1057,10 @@ body {
 }
 
 @media (max-width: 400px) {
+    .edit-card {
+        padding: 14px;
+    }
+
     .top-bar-title {
         font-size: 15px;
     }

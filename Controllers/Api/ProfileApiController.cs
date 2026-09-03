@@ -90,8 +90,7 @@ namespace MessagingApp.Controllers.Api
             var user = await _userManager.FindByIdAsync(currentUserId);
             if (user == null) return NotFound();
 
-            _fileService.DeleteProfilePicture(user.ProfilePicture);
-
+            await _fileService.DeleteProfilePictureAsync(user.ProfilePicture);
             var fileName = await _fileService.SaveProfilePictureAsync(file);
             if (fileName == null)
                 return BadRequest(ApiResponse<string>.Fail("Failed to upload image"));

@@ -107,9 +107,9 @@ namespace MessagingApp.Controllers
             user.Gender = model.Gender;
             user.Bio = model.Bio;
 
-            if (model.ProfilePictureFile != null)
+            if (model.ProfilePictureFile != null && model.ProfilePictureFile.Length > 0)
             {
-                _fileService.DeleteProfilePicture(user.ProfilePicture);
+                await _fileService.DeleteProfilePictureAsync(user.ProfilePicture);
                 var fileName = await _fileService.SaveProfilePictureAsync(model.ProfilePictureFile);
                 if (fileName != null)
                     user.ProfilePicture = fileName;
