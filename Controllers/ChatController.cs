@@ -14,17 +14,20 @@ namespace MessagingApp.Controllers
         private readonly IFriendService _friendService;
         private readonly IGroupService _groupService;
         private readonly UserManager<AppUser> _userManager;
+        private readonly IFileService _fileService;
 
         public ChatController(
             IChatService chatService,
             IFriendService friendService,
             IGroupService groupService,
-            UserManager<AppUser> userManager)
+            UserManager<AppUser> userManager,
+            IFileService fileService)
         {
             _chatService = chatService;
             _friendService = friendService;
             _groupService = groupService;
             _userManager = userManager;
+            _fileService = fileService;
         }
 
         public async Task<IActionResult> Index()
@@ -57,7 +60,7 @@ namespace MessagingApp.Controllers
             {
                 FriendId = friendId,
                 FriendName = $"{friend.FirstName} {friend.LastName}",
-                FriendProfilePicture = friend.ProfilePicture,
+                FriendProfilePicture = _fileService.GetProfilePictureUrl(friend.ProfilePicture),
                 CurrentUserId = currentUser.Id,
                 Messages = messages
             };

@@ -41,7 +41,7 @@
                                 <div class="friend-select-avatar">
                                     @if (!string.IsNullOrEmpty(friend.ProfilePicture))
                                     {
-                                        <img src="~/uploads/profile-pictures/@friend.ProfilePicture"
+                                        <img src="@friend.ProfilePicture"
                                              alt="@friend.FullName" />
                                     }
                                     else

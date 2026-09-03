@@ -62,7 +62,7 @@ namespace MessagingApp.Controllers
                 DateOfBirth = targetUser.DateOfBirth,
                 Gender = targetUser.Gender,
                 Bio = targetUser.Bio,
-                ProfilePicture = targetUser.ProfilePicture,
+                ProfilePicture = _fileService.GetProfilePictureUrl(targetUser.ProfilePicture),
                 CreatedAt = targetUser.CreatedAt,
                 IsFriend = isFriend,
                 HasPendingRequest = hasPendingRequest,
@@ -86,7 +86,7 @@ namespace MessagingApp.Controllers
                 DateOfBirth = user.DateOfBirth,
                 Gender = user.Gender,
                 Bio = user.Bio,
-                ExistingProfilePicture = user.ProfilePicture
+                ExistingProfilePicture = _fileService.GetProfilePictureUrl(user.ProfilePicture)
             };
 
             return View(vm);

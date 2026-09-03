@@ -14,7 +14,7 @@
                 <div class="avatar-preview" id="avatarPreview">
                     @if (!string.IsNullOrEmpty(Model.ExistingProfilePicture))
                     {
-                        <img src="~/uploads/profile-pictures/@Model.ExistingProfilePicture" id="avatarImg" alt="Profile" />
+                        <img src="@Model.ExistingProfilePicture" id="avatarImg" alt="Profile" />
                     }
                     else
                     {

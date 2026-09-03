@@ -20,7 +20,7 @@
                     <div class="preview-avatar">
                         @if (!string.IsNullOrEmpty(conv.FriendProfilePicture))
                         {
-                            <img src="~/uploads/profile-pictures/@conv.FriendProfilePicture" alt="@conv.FriendName" />
+                            <img src="@conv.FriendProfilePicture" alt="@conv.FriendName" />
                         }
                         else
                         {

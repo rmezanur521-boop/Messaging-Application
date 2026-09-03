@@ -40,7 +40,7 @@
                                 <div class="user-avatar-sm">
                                     @if (!string.IsNullOrEmpty(user.ProfilePicture))
                                     {
-                                        <img src="~/uploads/profile-pictures/@user.ProfilePicture" alt="Avatar" />
+                                        <img src="@user.ProfilePicture" alt="Avatar" />
                                     }
                                     else
                                     {
@@ -110,7 +110,7 @@
                             <div class="user-avatar-sm">
                                 @if (!string.IsNullOrEmpty(user.ProfilePicture))
                                 {
-                                    <img src="~/uploads/profile-pictures/@user.ProfilePicture" alt="Avatar" />
+                                    <img src="@user.ProfilePicture" alt="Avatar" />
                                 }
                                 else
                                 {

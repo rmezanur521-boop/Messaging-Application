@@ -25,7 +25,7 @@
                     <div class="user-avatar-sm">
                         @if (!string.IsNullOrEmpty(member.ProfilePicture))
                         {
-                            <img src="~/uploads/profile-pictures/@member.ProfilePicture"
+                            <img src="@member.ProfilePicture"
                                  alt="@member.FullName" />
                         }
                         else
@@ -69,7 +69,7 @@
                         <div class="user-avatar-sm">
                             @if (!string.IsNullOrEmpty(friend.ProfilePicture))
                             {
-                                <img src="~/uploads/profile-pictures/@friend.ProfilePicture"
+                                <img src="@friend.ProfilePicture"
                                      alt="@friend.FullName" />
                             }
                             else

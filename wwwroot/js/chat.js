@@ -7,13 +7,9 @@ let editingMessageId = null;
 let typingTimer = null;
 let isTyping = false;
 
-// ── Connect ──────────────────────────────────────────────────
-
 connection.start().then(() => {
     scrollToBottom();
 }).catch(err => console.error("SignalR error:", err));
-
-// ── Receive Events ───────────────────────────────────────────
 
 connection.on("ReceiveMessage", function (msg) {
     appendMessage(msg);
@@ -68,8 +64,6 @@ connection.on("UserOffline", function (userId) {
     if (userId === friendId) setOnlineStatus(false);
 });
 
-// ── Send Message ─────────────────────────────────────────────
-
 document.getElementById('sendBtn').addEventListener('click', sendMessage);
 
 document.getElementById('messageInput').addEventListener('keydown', function (e) {
@@ -83,6 +77,16 @@ document.getElementById('messageInput').addEventListener('input', function () {
     autoResize(this);
     handleTyping();
 });
+
+document.getElementById('messageInput').addEventListener('focus', function () {
+    setTimeout(scrollToBottom, 300);
+});
+
+if (window.visualViewport) {
+    window.visualViewport.addEventListener('resize', function () {
+        scrollToBottom();
+    });
+}
 
 function sendMessage() {
     const input = document.getElementById('messageInput');
@@ -100,9 +104,9 @@ function sendMessage() {
     input.value = '';
     autoResize(input);
     stopTyping();
+    input.focus();
+    setTimeout(scrollToBottom, 50);
 }
-
-// ── Edit / Delete ─────────────────────────────────────────────
 
 function startEdit(messageId, content) {
     editingMessageId = messageId;
@@ -125,8 +129,6 @@ function deleteMessage(messageId, receiverId) {
         .catch(err => console.error(err));
 }
 
-// ── Typing ────────────────────────────────────────────────────
-
 function handleTyping() {
     if (!isTyping) {
         isTyping = true;
@@ -143,8 +145,6 @@ function stopTyping() {
     }
     clearTimeout(typingTimer);
 }
-
-// ── Helpers ───────────────────────────────────────────────────
 
 function appendMessage(msg) {
     const area = document.getElementById('messagesArea');
@@ -187,6 +187,7 @@ function scrollToBottom() {
 function autoResize(el) {
     el.style.height = 'auto';
     el.style.height = Math.min(el.scrollHeight, 120) + 'px';
+    scrollToBottom();
 }
 
 function escapeHtml(text) {

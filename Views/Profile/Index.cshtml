@@ -11,7 +11,7 @@
             <div class="profile-avatar-wrap">
                 @if (!string.IsNullOrEmpty(Model.ProfilePicture))
                 {
-                    <img src="~/uploads/profile-pictures/@Model.ProfilePicture" class="profile-avatar" alt="Avatar" />
+                    <img src="@Model.ProfilePicture" class="profile-avatar" alt="Avatar" />
                 }
                 else
                 {

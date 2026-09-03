@@ -10,7 +10,7 @@
             <div class="chat-header-avatar">
                 @if (!string.IsNullOrEmpty(Model.FriendProfilePicture))
                 {
-                    <img src="~/uploads/profile-pictures/@Model.FriendProfilePicture" alt="@Model.FriendName" />
+                    <img src="@Model.FriendProfilePicture" alt="@Model.FriendName" />
                 }
                 else
                 {

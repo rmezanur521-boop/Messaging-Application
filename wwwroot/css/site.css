@@ -17,20 +17,27 @@
     --border: #e5e7eb;
     --shadow: 0 2px 8px rgba(0,0,0,0.08);
     --radius: 12px;
+    --app-height: 100vh;
+}
+
+html {
+    height: 100%;
 }
 
 body {
     font-family: 'Segoe UI', system-ui, sans-serif;
     background: var(--bg);
     color: var(--text);
-    height: 100vh;
+    height: var(--app-height);
     overflow: hidden;
+    overscroll-behavior: none;
 }
+
 
 /* ── App Shell ── */
 .app-shell {
     display: flex;
-    height: 100vh;
+    height: var(--app-height);
     overflow: hidden;
 }
 
@@ -41,8 +48,9 @@ body {
     border-right: 1px solid var(--border);
     display: flex;
     flex-direction: column;
-    height: 100vh;
+    height: var(--app-height);
     overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
     flex-shrink: 0;
     transition: transform 0.3s ease;
     z-index: 100;
@@ -993,7 +1001,7 @@ body {
         position: fixed;
         top: 0;
         left: 0;
-        height: 100vh;
+        height: var(--app-height);
         transform: translateX(-100%);
     }
 
@@ -1012,6 +1020,7 @@ body {
 
     .page-content {
         padding: 16px;
+        padding-bottom: calc(16px + env(safe-area-inset-bottom));
     }
 
     .form-row {
@@ -1020,5 +1029,20 @@ body {
 
     .friends-grid {
         grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    }
+
+    .top-bar {
+        padding: 0 12px;
+    }
+}
+
+@media (max-width: 400px) {
+    .top-bar-title {
+        font-size: 15px;
+    }
+
+    .page-content {
+        padding: 12px;
+        padding-bottom: calc(12px + env(safe-area-inset-bottom));
     }
 }

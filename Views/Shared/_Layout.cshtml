@@ -5,6 +5,7 @@
 @inject MessagingApp.Services.Interfaces.IFriendService FriendService
 @inject MessagingApp.Services.Interfaces.IChatService ChatService
 @inject MessagingApp.Services.Interfaces.IGroupService GroupService
+@inject MessagingApp.Services.Interfaces.IFileService FileService
 @{
     var currentUser = await UserManager.GetUserAsync(User);
     var friends = currentUser != null ? await FriendService.GetFriendsAsync(currentUser.Id) : new();
@@ -16,11 +17,26 @@
 <html lang="en">
 <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, viewport-fit=cover" />
     <title>@ViewData["Title"] - MessagingApp</title>
     <link rel="stylesheet" href="~/css/site.css" />
     <link rel="stylesheet" href="~/css/chat.css" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.1/css/all.min.css" integrity="sha512-2SwdPD6INVrV/lHTZbO2nodKhrnDdJK9/kg2XD1r9uGqPo1cUbujc+IYdlYdEErWNu69gVcYgdxlmVmzTWnetw==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <script>
+        (function () {
+            function setAppHeight() {
+                var h = (window.visualViewport ? window.visualViewport.height : window.innerHeight);
+                document.documentElement.style.setProperty('--app-height', h + 'px');
+            }
+            setAppHeight();
+            window.addEventListener('resize', setAppHeight);
+            window.addEventListener('orientationchange', setAppHeight);
+            if (window.visualViewport) {
+                window.visualViewport.addEventListener('resize', setAppHeight);
+                window.visualViewport.addEventListener('scroll', setAppHeight);
+            }
+        })();
+    </script>
     @await RenderSectionAsync("Styles", required: false)
 </head>
 <body>
@@ -45,7 +61,7 @@
                         <div class="sidebar-avatar">
                             @if (!string.IsNullOrEmpty(currentUser.ProfilePicture))
                             {
-                                <img src="~/uploads/profile-pictures/@currentUser.ProfilePicture" alt="You" />
+                                <img src="@FileService.GetProfilePictureUrl(currentUser.ProfilePicture)" alt="You" />
                             }
                             else
                             {
@@ -93,7 +109,7 @@
                             <div class="sidebar-item-avatar">
                                 @if (!string.IsNullOrEmpty(friend.ProfilePicture))
                                 {
-                                    <img src="~/uploads/profile-pictures/@friend.ProfilePicture" alt="@friend.FullName" />
+                                    <img src="@friend.ProfilePicture" alt="@friend.FullName" />
                                 }
                                 else
                                 {
@@ -175,7 +191,6 @@
     <script src="~/js/friends.js"></script>
 
     <script>
-        // Mobile sidebar toggle
         document.getElementById('menuToggle').addEventListener('click', () => {
             document.getElementById('sidebar').classList.toggle('open');
         });

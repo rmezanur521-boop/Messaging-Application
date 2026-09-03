@@ -15,12 +15,14 @@ namespace MessagingApp.Controllers
         private readonly IFriendService _friendService;
         private readonly UserManager<AppUser> _userManager;
         private readonly AppDbContext _context;
+        private readonly IFileService _fileService;
 
-        public FriendController(IFriendService friendService,AppDbContext context, UserManager<AppUser> userManager)
+        public FriendController(IFriendService friendService, AppDbContext context, UserManager<AppUser> userManager, IFileService fileService)
         {
             _friendService = friendService;
             _userManager = userManager;
             _context = context;
+            _fileService = fileService;
         }
 
         public async Task<IActionResult> Index()
@@ -55,7 +57,7 @@ namespace MessagingApp.Controllers
                             Id = x.Id,
                             FullName = x.FirstName + " " + x.LastName,
                             Bio = x.Bio,
-                            ProfilePicture = x.ProfilePicture,
+                            ProfilePicture = _fileService.GetProfilePictureUrl(x.ProfilePicture),
 
                             IsFriend = _context.Friendships.Any(f =>
                                 (f.UserId == userId && f.FriendId == x.Id) ||

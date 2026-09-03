@@ -140,7 +140,7 @@
                         <div class="member-avatar">
                             @if (!string.IsNullOrEmpty(member.ProfilePicture))
                             {
-                                <img src="~/uploads/profile-pictures/@member.ProfilePicture"
+                                <img src="@member.ProfilePicture"
                                      alt="@member.FullName" />
                             }
                             else

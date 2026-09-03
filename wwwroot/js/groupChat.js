@@ -8,15 +8,11 @@ let typingTimer = null;
 let isTyping = false;
 let typingUsers = {};
 
-// ── Connect ──────────────────────────────────────────────────
-
 connection.start().then(() => {
     connection.invoke("JoinGroup", groupId)
         .catch(err => console.error("JoinGroup error:", err));
     scrollToBottom();
 }).catch(err => console.error("SignalR error:", err));
-
-// ── Receive Events ───────────────────────────────────────────
 
 connection.on("ReceiveGroupMessage", function (msg) {
     appendGroupMessage(msg);
@@ -95,8 +91,6 @@ connection.on("AdminChanged", function (data) {
     });
 });
 
-// ── Send Message ─────────────────────────────────────────────
-
 document.getElementById('sendBtn').addEventListener('click', sendMessage);
 
 document.getElementById('messageInput').addEventListener('keydown', function (e) {
@@ -110,6 +104,16 @@ document.getElementById('messageInput').addEventListener('input', function () {
     autoResize(this);
     handleTyping();
 });
+
+document.getElementById('messageInput').addEventListener('focus', function () {
+    setTimeout(scrollToBottom, 300);
+});
+
+if (window.visualViewport) {
+    window.visualViewport.addEventListener('resize', function () {
+        scrollToBottom();
+    });
+}
 
 function sendMessage() {
     const input = document.getElementById('messageInput');
@@ -127,9 +131,9 @@ function sendMessage() {
     input.value = '';
     autoResize(input);
     stopTyping();
+    input.focus();
+    setTimeout(scrollToBottom, 50);
 }
-
-// ── Edit / Delete ─────────────────────────────────────────────
 
 function startEdit(messageId, content) {
     editingMessageId = messageId;
@@ -152,8 +156,6 @@ function deleteGroupMessage(messageId) {
         .catch(err => console.error(err));
 }
 
-// ── Typing ────────────────────────────────────────────────────
-
 function handleTyping() {
     if (!isTyping) {
         isTyping = true;
@@ -175,8 +177,6 @@ function showTypingIndicator() {
     document.getElementById('typingIndicator').style.display = 'flex';
 }
 
-// ── Members Panel ─────────────────────────────────────────────
-
 document.getElementById('membersToggle').addEventListener('click', function () {
     document.getElementById('membersPanel').classList.toggle('open');
 });
@@ -184,8 +184,6 @@ document.getElementById('membersToggle').addEventListener('click', function () {
 document.getElementById('closeMembersPanel').addEventListener('click', function () {
     document.getElementById('membersPanel').classList.remove('open');
 });
-
-// ── Helpers ───────────────────────────────────────────────────
 
 function appendGroupMessage(msg) {
     const area = document.getElementById('messagesArea');
@@ -231,6 +229,7 @@ function scrollToBottom() {
 function autoResize(el) {
     el.style.height = 'auto';
     el.style.height = Math.min(el.scrollHeight, 120) + 'px';
+    scrollToBottom();
 }
 
 function escapeHtml(text) {
