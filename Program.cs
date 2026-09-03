@@ -1,13 +1,15 @@
-﻿using MessagingApp.Data;
+﻿using Amazon.S3;
+using MessagingApp.Data;
 using MessagingApp.Hubs;
 using MessagingApp.Models.Domain;
 using MessagingApp.Services;
 using MessagingApp.Services.Interfaces;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
+
 var builder = WebApplication.CreateBuilder(args);
 
 var renderPort = Environment.GetEnvironmentVariable("PORT");
@@ -121,6 +123,21 @@ builder.Services.AddScoped<JwtService>();
 
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
+
+builder.Services.AddSingleton<IAmazonS3>(sp =>
+{
+    var config = sp.GetRequiredService<IConfiguration>();
+    var s3Config = new AmazonS3Config
+    {
+        ServiceURL = config["ObjectStorage:ServiceUrl"],
+        AuthenticationRegion = config["ObjectStorage:Region"],
+        ForcePathStyle = false   
+    };
+    return new AmazonS3Client(
+        config["ObjectStorage:AccessKey"],
+        config["ObjectStorage:SecretKey"],
+        s3Config);
+});
 var app = builder.Build();
 
 using (var scope = app.Services.CreateScope())
@@ -130,9 +147,7 @@ using (var scope = app.Services.CreateScope())
 }
 
 app.UseMiddleware<MessagingApp.Middleware.ExceptionHandlingMiddleware>();
-var uploadsPath = Path.Combine(builder.Environment.WebRootPath, "uploads", "profile-pictures");
-if (!Directory.Exists(uploadsPath))
-    Directory.CreateDirectory(uploadsPath);
+
 if (!app.Environment.IsDevelopment())
 {
     app.UseExceptionHandler("/Home/Error");

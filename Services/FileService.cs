@@ -1,17 +1,20 @@
-﻿using MessagingApp.Services.Interfaces;
+﻿using Amazon.S3;
+using Amazon.S3.Model;
+using MessagingApp.Services.Interfaces;
 
 namespace MessagingApp.Services
 {
     public class FileService : IFileService
     {
-        private readonly IWebHostEnvironment _env;
-        private readonly IHttpContextAccessor _httpContextAccessor;
-        private const string UploadFolder = "uploads/profile-pictures";
+        private readonly IAmazonS3 _s3;
+        private readonly string _bucket;
+        private readonly string _publicBaseUrl;
 
-        public FileService(IWebHostEnvironment env, IHttpContextAccessor httpContextAccessor)
+        public FileService(IAmazonS3 s3, IConfiguration config)
         {
-            _env = env;
-            _httpContextAccessor = httpContextAccessor;
+            _s3 = s3;
+            _bucket = config["ObjectStorage:BucketName"]!;
+            _publicBaseUrl = config["ObjectStorage:PublicBaseUrl"]!;
         }
 
         public async Task<string?> SaveProfilePictureAsync(IFormFile file)
@@ -22,36 +25,28 @@ namespace MessagingApp.Services
             var ext = Path.GetExtension(file.FileName).ToLowerInvariant();
             if (!allowed.Contains(ext)) return null;
 
-            var folder = Path.Combine(_env.WebRootPath, UploadFolder);
-            if (!Directory.Exists(folder))
-                Directory.CreateDirectory(folder);
+            var key = $"profile-pictures/{Guid.NewGuid()}{ext}";
 
-            var fileName = $"{Guid.NewGuid()}{ext}";
-            var filePath = Path.Combine(folder, fileName);
+            using var stream = file.OpenReadStream();
+            await _s3.PutObjectAsync(new PutObjectRequest
+            {
+                BucketName = _bucket,
+                Key = key,
+                InputStream = stream,
+                ContentType = file.ContentType,
+                CannedACL = S3CannedACL.PublicRead
+            });
 
-            using var stream = new FileStream(filePath, FileMode.Create);
-            await file.CopyToAsync(stream);
-
-            return fileName;
+            return key;
         }
 
-        public void DeleteProfilePicture(string? fileName)
+        public async void DeleteProfilePicture(string? key)
         {
-            if (string.IsNullOrEmpty(fileName)) return;
-            var path = Path.Combine(_env.WebRootPath, UploadFolder, fileName);
-            if (File.Exists(path))
-                File.Delete(path);
+            if (string.IsNullOrEmpty(key)) return;
+            await _s3.DeleteObjectAsync(_bucket, key);
         }
 
-        // Converts stored filename into a full URL the Flutter app can load directly.
-        public string? GetProfilePictureUrl(string? fileName)
-        {
-            if (string.IsNullOrEmpty(fileName)) return null;
-
-            var request = _httpContextAccessor.HttpContext?.Request;
-            if (request == null) return null;
-
-            return $"{request.Scheme}://{request.Host}/{UploadFolder}/{fileName}";
-        }
+        public string? GetProfilePictureUrl(string? key) =>
+            string.IsNullOrEmpty(key) ? null : $"{_publicBaseUrl}/{key}";
     }
 }
